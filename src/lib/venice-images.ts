@@ -121,7 +121,7 @@ export const SCHEDULE_IMAGES: Array<[string, VeniceImage[]]> = [
     ],
   ],
   [
-    "farewell gala dinner",
+    "cocktail reception",
     [
       { src: "/venice/deck-72.webp", caption: "Entrance" },
       { src: "/venice/deck-73.webp", caption: "Floor plan · cocktail" },
@@ -132,6 +132,11 @@ export const SCHEDULE_IMAGES: Array<[string, VeniceImage[]]> = [
       { src: "/venice/deck-78.webp", caption: "General decoration" },
       { src: "/venice/deck-79.webp", caption: "Smoking area" },
       { src: "/venice/deck-80.webp", caption: "Stairs" },
+    ],
+  ],
+  [
+    "farewell gala dinner",
+    [
       { src: "/venice/deck-81.webp", caption: "Floor plan · dinner 140" },
       { src: "/venice/deck-82.webp", caption: "Dinner layout" },
       { src: "/venice/deck-83.webp", caption: "Centerpieces" },

@@ -233,8 +233,9 @@ describe("Resume and Updates", () => {
 
 describe("Deck and Lookbook images", () => {
   it("matches images to events by name", () => {
-    assert.ok(scheduleImages("Farewell Gala Dinner – Beyond the Doors").length > 10);
+    assert.ok(scheduleImages("Farewell Gala Dinner – Beyond the Doors").length > 5);
     assert.ok(scheduleImages("Lunch – A Venetian Rhythm (market style)").length > 0);
+    assert.equal(scheduleImages("Cocktail Reception")[1]?.caption, "Floor plan · cocktail");
     assert.equal(scheduleImages("1:1 Appointments").length, 0);
     assert.equal(lookbookImages("Activities: Unlock Venice")[0]?.caption, "Lookbook");
   });

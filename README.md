@@ -38,10 +38,10 @@ in `src/lib/resume-photos.ts`.
 
 ## Environment
 
-| Variable           | Value                                     |
-| ------------------ | ----------------------------------------- |
-| `AIRTABLE_PAT`     | The shared "LILApp" personal access token |
-| `AIRTABLE_BASE_ID` | Optional; defaults to `appYbc2zQI75G8KUu` |
+| Variable           | Value                                                  |
+| ------------------ | ------------------------------------------------------ |
+| `AIRTABLE_PAT`     | The "LILApp Venice" Airtable token (data.records:read) |
+| `AIRTABLE_BASE_ID` | Optional; defaults to `appYbc2zQI75G8KUu`              |
 
 ## Develop
 
