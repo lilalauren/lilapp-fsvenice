@@ -45,11 +45,11 @@ export function UpdatesBell() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={updates.length ? `${updates.length} updates` : "Updates"}
-        className="relative inline-flex size-11 items-center justify-center rounded-md text-subtle hover:bg-secondary hover:text-foreground"
+        className="relative inline-flex size-11 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)]"
       >
         <Bell className="size-5" />
         {updates.length > 0 && (
-          <span className="absolute top-1.5 right-1.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 font-semibold text-primary-foreground">
+          <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 font-semibold text-primary-foreground">
             {updates.length}
           </span>
         )}

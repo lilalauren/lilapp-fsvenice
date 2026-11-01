@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { ExpandAll, Section } from "@/components/lilapp/cards";
 
 import { Block, Field, NotesList, Quiet } from "@/components/lilapp/ui";
 import type { QuestionRow, TeamRow } from "@/lib/airtable.server";
@@ -18,57 +21,74 @@ function BriefingPage() {
   // Your own travel card first.
   const team = [...data.team].sort((a, b) => Number(b.name === name) - Number(a.name === name));
   const questions = [...data.questions].sort((a, b) => Number(a.done) - Number(b.done));
+  const [open, setOpen] = useState<Set<string>>(new Set());
+
+  const sections = [
+    ...data.briefing.map((b) => ({
+      key: b.id,
+      title: b.section || "Briefing",
+      count: undefined as number | undefined,
+      body: <NotesList notes={b.content} />,
+    })),
+    team.length
+      ? {
+          key: "team",
+          title: "Team",
+          count: team.length,
+          body: team.map((t) => <TravelCard key={t.id} member={t} />),
+        }
+      : null,
+    questions.length
+      ? {
+          key: "questions",
+          title: "Open Questions",
+          count: questions.filter((q) => !q.done).length,
+          body: questions.map((q) => <Question key={q.id} question={q} />),
+        }
+      : null,
+  ].filter((x) => x !== null);
+  const allOpen = sections.length > 0 && sections.every((x) => open.has(x.key));
+  const toggle = (key: string, next: boolean) =>
+    setOpen((prev) => {
+      const out = new Set(prev);
+      if (next) out.add(key);
+      else out.delete(key);
+      return out;
+    });
 
   return (
     <>
-      <h1 className="ui-page-title">Briefing</h1>
-      {data.briefing.length === 0 ? (
-        <Quiet>
-          {data.loaded.BRIEFING ? "Nothing in the Briefing yet." : "Briefing not loaded yet."}
-        </Quiet>
-      ) : (
-        <div className="mt-2 divide-y divide-border">
-          {data.briefing.map((b) => (
-            <section key={b.id} className="py-4">
-              {b.section ? <h2 className="ui-item-title mb-1.5">{b.section}</h2> : null}
-              <NotesList notes={b.content} />
-            </section>
-          ))}
-        </div>
-      )}
-
-      {team.length > 0 ? (
-        <section className="mt-6">
-          <h2 className="ui-page-title">Team</h2>
-          <ul className="divide-y divide-border">
-            {team.map((t) => (
-              <li key={t.id}>
-                <TravelCard member={t} />
-              </li>
-            ))}
-          </ul>
-        </section>
+      <div className="flex justify-end">
+        <ExpandAll
+          allOpen={allOpen}
+          onClick={() => setOpen(allOpen ? new Set() : new Set(sections.map((x) => x.key)))}
+        />
+      </div>
+      {data.briefing.length === 0 && !data.loaded.BRIEFING ? (
+        <Quiet>Briefing not loaded yet.</Quiet>
       ) : null}
-
-      {questions.length > 0 ? (
-        <section className="mt-6">
-          <h2 className="ui-page-title">Open Questions</h2>
-          <ul className="divide-y divide-border">
-            {questions.map((q) => (
-              <li key={q.id}>
-                <Question question={q} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {sections.map((x) => (
+        <Section
+          key={x.key}
+          title={x.title}
+          count={x.count}
+          open={open.has(x.key)}
+          onToggle={(next) => toggle(x.key, next)}
+        >
+          {x.key === "team" || x.key === "questions" ? (
+            x.body
+          ) : (
+            <div className="card p-4">{x.body}</div>
+          )}
+        </Section>
+      ))}
     </>
   );
 }
 
 function TravelCard({ member: t }: { member: TeamRow }) {
   return (
-    <article className="space-y-0.5 py-4">
+    <article className="card space-y-0.5 p-4">
       <h3 className="ui-item-title">{t.name}</h3>
       {t.role ? <p className="ui-body text-muted-foreground">{t.role}</p> : null}
       {t.phone ? (
@@ -93,7 +113,7 @@ function TravelCard({ member: t }: { member: TeamRow }) {
 
 function Question({ question: q }: { question: QuestionRow }) {
   return (
-    <article className={q.done ? "py-4 opacity-60" : "py-4"}>
+    <article className={q.done ? "card p-4 opacity-60" : "card p-4"}>
       <p className="label-caps">{[q.category, q.done ? "Done" : ""].filter(Boolean).join(" · ")}</p>
       <h3 className="mt-0.5 font-semibold text-foreground">{q.question}</h3>
       <Field label="Ask" value={q.ask} />

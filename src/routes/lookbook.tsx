@@ -52,15 +52,14 @@ function LookbookPage() {
 
   return (
     <>
-      <h1 className="ui-page-title">Lookbook</h1>
       {byDay.length === 0 ? (
         <Quiet>{data.loaded.LOOKBOOK ? "No looks yet." : "Lookbook not loaded yet."}</Quiet>
       ) : (
         byDay.map(({ day, attire, looks }) => (
-          <section key={day} className="mt-6">
-            <h2 className="label-caps text-foreground">{day}</h2>
+          <section key={day} className="mb-6">
+            <h2 className="ui-label mb-2">{day}</h2>
             {attire ? (
-              <div className="mt-2 space-y-0.5 border-b border-border pb-4">
+              <div className="card mb-3 space-y-0.5 p-4">
                 <Field label="Daytime Attire" value={attire.daytimeAttire} strong />
                 <Field label="Evening Attire" value={attire.eveningAttire} strong />
                 {attire.whatToWear ? (
@@ -70,7 +69,7 @@ function LookbookPage() {
                 ) : null}
               </div>
             ) : null}
-            <ul className="divide-y divide-border">
+            <ul className="space-y-3">
               {looks.map((l) => (
                 <li key={l.id}>
                   <Look look={l} />
@@ -92,9 +91,9 @@ function Look({ look: l }: { look: LookbookRow }) {
       .map((a) => ({ src: a.thumb ?? a.url, caption: a.filename ?? l.event })),
   ];
   return (
-    <article className="space-y-3 py-4">
+    <article className="card space-y-3 p-4">
       <div>
-        <h3 className="ui-item-title">{l.event}</h3>
+        <h3 className="font-serif text-xl leading-snug text-foreground">{l.event}</h3>
         <Field label="Dress Code" value={l.dressCode} strong />
       </div>
       <ImageStrip images={images} />

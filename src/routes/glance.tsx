@@ -25,11 +25,10 @@ function GlancePage() {
 
   return (
     <>
-      <h1 className="ui-page-title">Program at a Glance</h1>
       {days.length === 0 ? (
         <Quiet>Schedule not loaded yet.</Quiet>
       ) : (
-        <div className="mt-3 divide-y divide-border">
+        <div className="card divide-y divide-border px-4">
           {days.map((d) => {
             const rows = sortSchedule(data.schedule.filter((r) => r.date === d && !isSetupRow(r)));
             const attire = data.attire.find((a) => weekday(a.day) === weekday(formatDayPlain(d)));

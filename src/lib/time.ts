@@ -169,3 +169,28 @@ export function formatChangeTime(iso: string, now: Date = new Date()): string {
   }).format(d);
   return `${md} ${clock}`;
 }
+
+const CLOCK_RE = /^~?\s*\d{1,2}(:\d{2})?\s*([ap]\.?m\.?)?/i;
+
+/** Compact clock for the time column: "6:45 AM (team leaves…)" → "6:45 am", "7:00 PM" → "7 pm". */
+export function shortTime(input?: string): string {
+  const text = input?.trim() ?? "";
+  const minutes = parseTimeToMinutes(text);
+  if (minutes == null || !CLOCK_RE.test(text)) return text;
+  const h24 = Math.floor(minutes / 60);
+  const mm = minutes % 60;
+  const h12 = ((h24 + 11) % 12) + 1;
+  const suffix = h24 >= 12 ? "pm" : "am";
+  return `${text.startsWith("~") ? "~" : ""}${h12}${mm ? `:${String(mm).padStart(2, "0")}` : ""} ${suffix}`;
+}
+
+/** "10:45 AM" + "12:50 PM" → "10:45 am–12:50 pm"; shares the suffix: "7–10 pm". */
+export function shortRange(start?: string, end?: string): string {
+  const s = shortTime(start);
+  const e = shortTime(end);
+  if (!s || !e) return s || e;
+  const suffix = / (am|pm)$/;
+  const sm = s.match(suffix)?.[1];
+  if (sm && sm === e.match(suffix)?.[1]) return `${s.replace(suffix, "")}–${e}`;
+  return `${s}–${e}`;
+}

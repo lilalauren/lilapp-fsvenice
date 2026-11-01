@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 
-import { ActivitiesGroupCard, DecorCard, EventCard } from "@/components/lilapp/cards";
+import { ActivitiesGroupCard, DecorCard, EventCard, ExpandAll } from "@/components/lilapp/cards";
 import { Quiet, SelectBox } from "@/components/lilapp/ui";
 import {
   buildDayItems,
@@ -14,7 +14,7 @@ import {
   scheduleDays,
   type DayItem,
 } from "@/lib/schedule";
-import { formatDayLabel, formatDayLong, nowInVenice, relativeUntil } from "@/lib/time";
+import { formatDayLabel, formatDayLong, nowInVenice, relativeUntil, TIME_LABEL } from "@/lib/time";
 import { tripQueryOptions } from "@/lib/trip";
 import { useDisplayName } from "@/lib/use-display-name";
 import { teamNames } from "@/lib/people";
@@ -54,7 +54,7 @@ function SchedulePage() {
 
   return (
     <>
-      <div className="mb-4 grid grid-cols-2 rounded-md bg-muted p-1 text-sm">
+      <div className="mb-3 grid grid-cols-2 rounded-[13px] bg-secondary p-1 text-sm">
         {(["full", "mine"] as const).map((v) => {
           const active = (search.view ?? "full") === v;
           return (
@@ -65,8 +65,8 @@ function SchedulePage() {
               aria-pressed={active}
               className={
                 active
-                  ? "min-h-10 rounded bg-background font-semibold text-foreground shadow-sm"
-                  : "min-h-10 rounded text-muted-foreground"
+                  ? "min-h-11 rounded-[10px] bg-sage font-semibold text-foreground"
+                  : "min-h-11 rounded-[10px] font-medium text-muted-foreground"
               }
             >
               {v === "full" ? "Full Schedule" : "My Schedule"}
@@ -121,6 +121,7 @@ function FullSchedule({
     const index = items.findIndex((i) => !isItemPast(i));
     return index > 0 ? items[index]!.key : null;
   }, [items]);
+  const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
   const currentRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!currentKey) return;
@@ -151,14 +152,18 @@ function FullSchedule({
           ))}
         </SelectBox>
       </div>
-      <Link
-        to="/print"
-        search={{ day: day || undefined, who: who || undefined }}
-        className="mt-1 -ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-medium text-primary"
-      >
-        <Printer className="size-4" aria-hidden />
-        Print briefing
-      </Link>
+      <div className="mt-1 flex items-center justify-between">
+        <Link
+          to="/print"
+          search={{ day: day || undefined, who: who || undefined }}
+          className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-semibold text-primary"
+        >
+          <Printer className="size-4" aria-hidden />
+          Print briefing
+        </Link>
+        <ExpandAll allOpen={Boolean(expandAll)} onClick={() => setExpandAll(!expandAll)} />
+      </div>
+      <p className="text-sm text-muted-foreground">{TIME_LABEL}</p>
 
       {!data.loaded.SCHEDULE && data.schedule.length === 0 ? (
         <Quiet>Schedule not loaded yet.</Quiet>
@@ -166,14 +171,15 @@ function FullSchedule({
         <Quiet>Nothing scheduled for {who || "this filter"}.</Quiet>
       ) : (
         grouped.map(([d, dayItems]) => (
-          <section key={d} className="mt-4">
-            <h2 className="ui-page-title">{formatDayLong(d)}</h2>
-            <div className="divide-y divide-border">
+          <section key={d} className="mt-5">
+            <h2 className="ui-page-title mb-3">{formatDayLong(d)}</h2>
+            <div className="space-y-3">
               {dayItems.map((item) => (
                 <ScheduleItem
                   key={item.key}
                   item={item}
                   activities={data.activities}
+                  expandAll={expandAll}
                   cardRef={item.key === currentKey ? currentRef : undefined}
                 />
               ))}
@@ -193,10 +199,12 @@ function rowsHaveActivityDay(data: TripData, day: string) {
 function ScheduleItem({
   item,
   activities,
+  expandAll,
   cardRef,
 }: {
   item: DayItem;
   activities: ActivityRow[];
+  expandAll?: boolean;
   cardRef?: React.Ref<HTMLElement>;
 }) {
   const past = isItemPast(item);
@@ -209,6 +217,7 @@ function ScheduleItem({
       setup={item.setup}
       past={past}
       activity={matchActivity(item.row, activities)}
+      expandAll={expandAll}
       cardRef={cardRef}
     />
   );
@@ -264,7 +273,7 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
       ) : null}
       {happening ? (
         <section className="mt-4">
-          <h3 className="label-caps">Happening Now</h3>
+          <h3 className="ui-label mb-2">Happening Now</h3>
           <EventCard
             row={happening}
             setup={false}
@@ -274,8 +283,8 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
         </section>
       ) : null}
       {upNext ? (
-        <section className="mt-4 border-t border-border pt-4">
-          <h3 className="label-caps">Up Next</h3>
+        <section className="mt-4">
+          <h3 className="ui-label mb-2">Up Next</h3>
           <EventCard
             row={upNext}
             setup={false}
@@ -285,8 +294,8 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
         </section>
       ) : null}
       {myActivities.length > 0 && day === days.find((d) => rowsHaveActivityDay(data, d)) ? (
-        <section className="mt-4 border-t border-border pt-4">
-          <h3 className="label-caps">Your Activities</h3>
+        <section className="mt-4">
+          <h3 className="ui-label mb-2">Your Activities</h3>
           <ActivitiesGroupCard activities={myActivities} past={false} />
         </section>
       ) : null}

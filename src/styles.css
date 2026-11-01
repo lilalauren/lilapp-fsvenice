@@ -37,44 +37,51 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-sage: var(--sage);
+  --color-sage-card: var(--sage-card);
+  --color-sage-line: var(--sage-line);
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.8rem;
 
-  /* Paper */
-  --background: #ffffff;
-  /* Ink */
-  --foreground: #1f241f;
+  /* Panattoni look: sage page, white cards, dark green ink (no black). */
+  --background: #e5e9e1;
+  --foreground: #24361f;
 
   --card: #ffffff;
-  --card-foreground: #1f241f;
+  --card-foreground: #24361f;
   --popover: #ffffff;
-  --popover-foreground: #1f241f;
+  --popover-foreground: #24361f;
 
-  /* Sage accent */
-  --primary: #3a4a3a;
+  --primary: #4a5a45;
   --primary-foreground: #ffffff;
 
-  --secondary: #f4f6f4;
-  --secondary-foreground: #1f241f;
+  --secondary: #dfe5d8;
+  --secondary-foreground: #24361f;
 
-  --muted: #f4f6f4;
-  --muted-foreground: #6b766b;
-  --subtle: #8b968b;
+  --muted: #dfe5d8;
+  --muted-foreground: #55654f;
+  --subtle: #6f7d69;
 
-  --accent: #eef2ee;
-  --accent-foreground: #1f241f;
+  --accent: #dfe5d8;
+  --accent-foreground: #24361f;
+
+  /* Sage tab bar and the Sabbatical activity cards. */
+  --sage: #adb9a5;
+  --sage-card: #c4d4bd;
+  --sage-line: #8fa889;
 
   --destructive: #a83232;
   --destructive-foreground: #ffffff;
 
-  --border: #e5ebe5;
-  --input: #e5ebe5;
-  --ring: #3a4a3a;
+  --border: #cdd5c5;
+  --input: #cdd5c5;
+  --ring: #4a5a45;
+  --card-shadow: 0 1px 2px rgb(26 33 24 / 0.07), 0 4px 12px rgb(26 33 24 / 0.05);
 }
 
 @layer base {
@@ -107,6 +114,23 @@
 }
 
 /* Type scale: 15–18px on phones. Only event names are bold by default. */
+/* White card on the sage page. */
+@utility card {
+  background: var(--color-card);
+  border-radius: 13px;
+  box-shadow: var(--card-shadow);
+}
+
+/* Small uppercase green heading (Panattoni section style). */
+@utility ui-label {
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 @utility ui-page-title {
   font-family: var(--font-serif);
   font-size: 1.625rem;

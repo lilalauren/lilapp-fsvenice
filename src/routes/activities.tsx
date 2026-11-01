@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { ActivityCard } from "@/components/lilapp/cards";
+import { useState } from "react";
+
+import { ActivityCard, ExpandAll } from "@/components/lilapp/cards";
 import { Quiet } from "@/components/lilapp/ui";
 import { normalizeName, sortActivities } from "@/lib/schedule";
 import { formatDayLong } from "@/lib/time";
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/activities")({
 
 function ActivitiesPage() {
   const { data } = useSuspenseQuery(tripQueryOptions);
+  const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
   const activities = sortActivities(data.activities);
   // The Activities table has no date; it belongs to the day of the Activity rows in Schedule.
   const day = data.schedule.find((r) => normalizeName(r.type) === "activity")?.date;
@@ -35,22 +38,24 @@ function ActivitiesPage() {
 
   return (
     <>
-      <h1 className="ui-page-title">Activities</h1>
-      {day ? <p className="ui-body mt-0.5 text-muted-foreground">{formatDayLong(day)}</p> : null}
+      <div className="flex items-center justify-between">
+        {day ? <h2 className="ui-page-title">{formatDayLong(day)}</h2> : <span />}
+        <ExpandAll allOpen={Boolean(expandAll)} onClick={() => setExpandAll(!expandAll)} />
+      </div>
       {activities.length === 0 ? (
         <Quiet>
           {data.loaded.ACTIVITIES ? "No activities yet." : "Activities not loaded yet."}
         </Quiet>
       ) : (
         groups.map((g) => (
-          <section key={g.title} className="mt-5">
-            <h2 className="label-caps">
+          <section key={g.title} className="mt-4">
+            <h3 className="ui-label mb-2">
               {g.title} · {g.rows.length}
-            </h2>
-            <ul className="divide-y divide-border">
+            </h3>
+            <ul className="space-y-3">
               {g.rows.map((a) => (
                 <li key={a.id}>
-                  <ActivityCard activity={a} />
+                  <ActivityCard activity={a} expandAll={expandAll} />
                 </li>
               ))}
             </ul>

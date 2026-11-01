@@ -112,13 +112,13 @@ export function SelectBox({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="ui-body min-h-11 w-full appearance-none truncate rounded-md border border-border bg-background py-2 pr-9 pl-3 text-foreground focus:border-primary focus:outline-none"
+        className="min-h-12 w-full appearance-none truncate rounded-[13px] bg-card py-2 pr-9 pl-4 text-sm font-semibold tracking-[0.04em] text-foreground uppercase shadow-[var(--card-shadow)] focus:outline-2 focus:outline-primary"
       >
         {children}
       </select>
       <ChevronDown
         aria-hidden
-        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-subtle"
+        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-primary"
       />
     </label>
   );
