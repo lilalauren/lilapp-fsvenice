@@ -5,6 +5,7 @@ import type { ActivityRow, ScheduleRow, TripData } from "./airtable.server";
 import { tripFromRecords } from "./airtable.server";
 import { mergeWithCache } from "./offline";
 import { peopleInGroup } from "./people";
+import { resumePhoto } from "./resume-photos";
 import { buildDayItems, isAssigned, isSetupRow, matchActivity, sortActivities } from "./schedule";
 import {
   formatDayLabel,
@@ -228,6 +229,40 @@ describe("Resume and Updates", () => {
       ],
     });
     assert.equal(collectUpdates(trip, {}, "2026-11-05T12:00:00Z").length, 1);
+  });
+});
+
+describe("Resume headshots", () => {
+  it("finds a supplied photo for everyone on the client's slides", () => {
+    for (const name of [
+      "Marc Speichert",
+      "Adrian Messerli",
+      "Anne Mansfield",
+      "Claire Harvey",
+      "Carolyn Mar",
+      "Joerg Zimmermann",
+      "Khaled Al-Idrissi",
+      "Audrey Bozzi",
+      "Fiona Williams",
+      "Mahmoud Salah",
+      "Meryem Marbouhy",
+      "Nathalie Lazukina",
+      "Victoria Matteucci",
+      "Nabila Bristow",
+      "Alexis Hughes",
+      "Jasmine Lee",
+      "Christian Zandonella",
+      "Francesco Maria Corazzi",
+      "Sara Zanettin",
+      "Smeralda Midili",
+      "Alessia Venturini",
+      "Matteo Manetta",
+      "Massimo Colella",
+      "Adriano Rausa",
+    ]) {
+      assert.match(resumePhoto(name, ""), /^\/photos\/.+\.webp$/, name);
+    }
+    assert.equal(resumePhoto("Mark", "https://airtable/photo.jpg"), "https://airtable/photo.jpg");
   });
 });
 

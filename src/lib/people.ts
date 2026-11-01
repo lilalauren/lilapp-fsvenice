@@ -4,6 +4,7 @@ import { normalizeName } from "./schedule";
 // Lauren's Key People groups. Older group names fold into the matching option.
 export const RESUME_GROUPS = [
   { label: "Leadership", groups: ["leadership", "four seasons vip"] },
+  { label: "Worldwide Sales Team", groups: ["worldwide sales team"] },
   { label: "Danieli Hotel Staff", groups: ["danieli hotel staff", "hotel host"] },
   { label: "DMC & Client Contact", groups: ["dmc", "client contact"] },
 ] as const;
