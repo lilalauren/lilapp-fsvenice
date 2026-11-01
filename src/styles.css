@@ -1,0 +1,126 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+/*
+ * LILApp — light-mode-only palette.
+ * Palette per LILA PHOTO spec: paper/ink/muted/subtle/border + sage accent.
+ * All colors are set as raw CSS variables and mapped through @theme inline so
+ * Tailwind utilities (bg-primary, text-muted-foreground, border, etc.) resolve
+ * to the values below.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Paper */
+  --background: #ffffff;
+  /* Ink */
+  --foreground: #1f241f;
+
+  --card: #ffffff;
+  --card-foreground: #1f241f;
+  --popover: #ffffff;
+  --popover-foreground: #1f241f;
+
+  /* Sage accent */
+  --primary: #3a4a3a;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f4f6f4;
+  --secondary-foreground: #1f241f;
+
+  --muted: #f4f6f4;
+  --muted-foreground: #6b766b;
+  --subtle: #8b968b;
+
+  --accent: #eef2ee;
+  --accent-foreground: #1f241f;
+
+  --destructive: #a83232;
+  --destructive-foreground: #ffffff;
+
+  --border: #e5ebe5;
+  --input: #e5ebe5;
+  --ring: #3a4a3a;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@utility label-caps {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-subtle);
+  font-weight: 500;
+}
+
+@utility time-col {
+  /* Wide enough for the longest expected range "2:00–2:45 pm" on its own line. */
+  width: 6.25rem;
+  min-width: 6.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print: brand stamp in the top-right of every printed page. */
+@media print {
+  body::before {
+    content: "";
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 56px;
+    height: 56px;
+    background-image: var(--print-brand-url);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 9999;
+    pointer-events: none;
+  }
+}
