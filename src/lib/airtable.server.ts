@@ -20,6 +20,9 @@ export const TABLES = {
 
 export type TableKey = keyof typeof TABLES;
 
+// Grid views whose sort the app keeps (Schedule: Date, then Sort Time).
+const VIEWS: Partial<Record<TableKey, string>> = { SCHEDULE: "viw3NK9SzC1MHVStn" };
+
 export type Attachment = {
   url: string;
   thumb?: string;
@@ -39,13 +42,14 @@ function token(): string {
   return pat;
 }
 
-async function listAll(table: string): Promise<AirtableRecord[]> {
+async function listAll(table: string, view?: string): Promise<AirtableRecord[]> {
   const pat = token();
   const baseId = process.env.AIRTABLE_BASE_ID || DEFAULT_BASE_ID;
   const out: AirtableRecord[] = [];
   let offset: string | undefined;
   do {
     const qs = new URLSearchParams({ pageSize: "100" });
+    if (view) qs.set("view", view);
     if (offset) qs.set("offset", offset);
     // Cache-buster defeats any intermediate/CDN fetch cache so the app
     // always sees the latest Airtable state within one poll interval.
@@ -217,7 +221,7 @@ export type TripData = {
  */
 async function listSafe(key: TableKey): Promise<{ key: TableKey; rows: AirtableRecord[] | null }> {
   try {
-    return { key, rows: await listAll(TABLES[key]) };
+    return { key, rows: await listAll(TABLES[key], VIEWS[key]) };
   } catch (error) {
     console.error(`Airtable table ${key} failed to load; continuing without it.`, error);
     return { key, rows: null };
@@ -248,11 +252,11 @@ export function tripFromRecords(raw: Partial<Record<TableKey, AirtableRecord[] |
       eventName: str(f["Event Name"]),
       date: str(f["Date"]).slice(0, 10),
       day: str(f["Day"]),
-      callTime: str(f["Photographer Call Time"]),
+      callTime: str(f["Call Time"] ?? f["Photographer Call Time"]),
       decorAdvance: str(f["Décor Advance"]),
       startTime: str(f["Start Time"]),
       endTime: str(f["End Time"]),
-      sortTime: str(f["Sort Time - hidden"]),
+      sortTime: str(f["Sort Time"] ?? f["Sort Time - hidden"]),
       type: str(f["Type"]),
       venue: str(f["Venue"]),
       boatTransfer: str(f["Boat Transfer"]),
@@ -260,9 +264,9 @@ export function tripFromRecords(raw: Partial<Record<TableKey, AirtableRecord[] |
       photographers: list(f["Photographer"]),
       dressCode: str(f["Dress Code"]),
       vipFocus: str(f["VIP Focus"]),
-      notes: str(f["Notes"]),
+      notes: str(f["Briefing"] ?? f["Notes"]),
       decorToShoot: str(f["Décor to Shoot"]),
-      photographyRequests: str(f["Photography Requests"]),
+      photographyRequests: str(f["Coverage Requirements"] ?? f["Photography Requests"]),
       rush: f["Rush"] === true,
       lastModified: str(f["Last modified"]),
     })).filter((r) => r.eventName || r.startTime || r.venue || r.notes),

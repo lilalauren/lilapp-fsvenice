@@ -234,9 +234,9 @@ export function EventCard({
           ) : null}
           <Field label="Dress Code" value={row.dressCode} />
           <Field label="VIP Focus" value={row.vipFocus} />
-          <Block label="Photography Requests" text={row.photographyRequests} />
+          <Block label="Briefing" text={row.notes} />
+          <Block label="Coverage Requirements" text={row.photographyRequests} />
           <Block label="Décor to Shoot" text={row.decorToShoot} />
-          <Block label="Notes" text={row.notes} />
           {activity ? <ActivityFacts activity={activity} /> : null}
           <ImageStrip images={images} title="Décor & floor plans" />
           {past ? (
