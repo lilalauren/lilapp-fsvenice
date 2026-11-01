@@ -1,19 +1,303 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { readDisplayNameSync } from "@/lib/use-display-name";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Printer } from "lucide-react";
+
+import { ActivitiesGroupCard, DecorCard, EventCard } from "@/components/lilapp/cards";
+import { Quiet, SelectBox } from "@/components/lilapp/ui";
+import {
+  buildDayItems,
+  isItemPast,
+  itemDate,
+  matchActivity,
+  nowAndNext,
+  scheduleDays,
+  type DayItem,
+} from "@/lib/schedule";
+import { formatDayLabel, formatDayLong, nowInVenice, relativeUntil } from "@/lib/time";
+import { tripQueryOptions } from "@/lib/trip";
+import { useDisplayName } from "@/lib/use-display-name";
+import { teamNames } from "@/lib/people";
+import type { ActivityRow, TripData } from "@/lib/airtable.server";
+
+type ScheduleSearch = { day?: string; who?: string; view?: "mine" };
+
+const pick = (search: Record<string, unknown>, key: string) =>
+  typeof search[key] === "string" && search[key] ? (search[key] as string) : undefined;
 
 export const Route = createFileRoute("/")({
-  // Default landing = Full Schedule (everyone can see the whole team's day).
-  loader: () => {
-    throw redirect({ to: "/schedule/full" });
-  },
-  component: () => null,
+  validateSearch: (search: Record<string, unknown>): ScheduleSearch => ({
+    day: pick(search, "day"),
+    who: pick(search, "who"),
+    view: search.view === "mine" ? "mine" : undefined,
+  }),
+  head: () => ({ meta: [{ title: "Schedule — LILApp Venice" }] }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(tripQueryOptions),
+  component: SchedulePage,
 });
 
-export function useEnsureName() {
-  const nav = useNavigate();
+function SchedulePage() {
+  const { data } = useSuspenseQuery(tripQueryOptions);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/" });
+  const days = useMemo(() => scheduleDays(data.schedule), [data.schedule]);
+
+  // During the trip, open on today in Venice; before or after, show all days.
+  const [defaultDay] = useState(() => {
+    const today = nowInVenice().date;
+    return days.includes(today) ? today : "";
+  });
+  const day = search.day === "all" ? "" : (search.day ?? defaultDay);
+  const who = search.who ?? "";
+  const setSearch = (next: ScheduleSearch) =>
+    navigate({ search: (prev) => ({ ...prev, ...next }), replace: true });
+
+  return (
+    <>
+      <div className="mb-4 grid grid-cols-2 rounded-md bg-muted p-1 text-sm">
+        {(["full", "mine"] as const).map((v) => {
+          const active = (search.view ?? "full") === v;
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setSearch({ view: v === "mine" ? "mine" : undefined })}
+              aria-pressed={active}
+              className={
+                active
+                  ? "min-h-10 rounded bg-background font-semibold text-foreground shadow-sm"
+                  : "min-h-10 rounded text-muted-foreground"
+              }
+            >
+              {v === "full" ? "Full Schedule" : "My Schedule"}
+            </button>
+          );
+        })}
+      </div>
+      {search.view === "mine" ? (
+        <MySchedule data={data} days={days} />
+      ) : (
+        <FullSchedule
+          data={data}
+          days={days}
+          day={day}
+          who={who}
+          onDay={(d) => setSearch({ day: d || "all" })}
+          onWho={(w) => setSearch({ who: w || undefined })}
+        />
+      )}
+    </>
+  );
+}
+
+function FullSchedule({
+  data,
+  days,
+  day,
+  who,
+  onDay,
+  onWho,
+}: {
+  data: TripData;
+  days: string[];
+  day: string;
+  who: string;
+  onDay: (d: string) => void;
+  onWho: (w: string) => void;
+}) {
+  const items = useMemo(() => {
+    const rows = day ? data.schedule.filter((r) => r.date === day) : data.schedule;
+    return buildDayItems(rows, data.activities, who);
+  }, [data, day, who]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, DayItem[]>();
+    for (const item of items) map.set(itemDate(item), [...(map.get(itemDate(item)) ?? []), item]);
+    return Array.from(map.entries());
+  }, [items]);
+
+  // Centre on the first card that hasn't finished, once finished cards sit above it.
+  const currentKey = useMemo(() => {
+    const index = items.findIndex((i) => !isItemPast(i));
+    return index > 0 ? items[index]!.key : null;
+  }, [items]);
+  const currentRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    if (!readDisplayNameSync()) nav({ to: "/pick-name" });
-  }, [nav]);
+    if (!currentKey) return;
+    const id = window.setTimeout(
+      () => currentRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }),
+      120,
+    );
+    return () => window.clearTimeout(id);
+  }, [currentKey]);
+
+  return (
+    <>
+      <div className="flex gap-2">
+        <SelectBox label="Team member" value={who} onChange={onWho}>
+          <option value="">All team</option>
+          {teamNames(data).map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </SelectBox>
+        <SelectBox label="Day" value={day} onChange={onDay}>
+          <option value="">All days</option>
+          {days.map((d) => (
+            <option key={d} value={d}>
+              {formatDayLabel(d)}
+            </option>
+          ))}
+        </SelectBox>
+      </div>
+      <Link
+        to="/print"
+        search={{ day: day || undefined, who: who || undefined }}
+        className="mt-1 -ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-medium text-primary"
+      >
+        <Printer className="size-4" aria-hidden />
+        Print briefing
+      </Link>
+
+      {!data.loaded.SCHEDULE && data.schedule.length === 0 ? (
+        <Quiet>Schedule not loaded yet.</Quiet>
+      ) : grouped.length === 0 ? (
+        <Quiet>Nothing scheduled for {who || "this filter"}.</Quiet>
+      ) : (
+        grouped.map(([d, dayItems]) => (
+          <section key={d} className="mt-4">
+            <h2 className="ui-page-title">{formatDayLong(d)}</h2>
+            <div className="divide-y divide-border">
+              {dayItems.map((item) => (
+                <ScheduleItem
+                  key={item.key}
+                  item={item}
+                  activities={data.activities}
+                  cardRef={item.key === currentKey ? currentRef : undefined}
+                />
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+    </>
+  );
+}
+
+/** The Activities card only belongs on the day that has Activity rows. */
+function rowsHaveActivityDay(data: TripData, day: string) {
+  return data.schedule.some((r) => r.date === day && r.type.toLowerCase() === "activity");
+}
+
+function ScheduleItem({
+  item,
+  activities,
+  cardRef,
+}: {
+  item: DayItem;
+  activities: ActivityRow[];
+  cardRef?: React.Ref<HTMLElement>;
+}) {
+  const past = isItemPast(item);
+  if (item.kind === "decor") return <DecorCard row={item.row} past={past} cardRef={cardRef} />;
+  if (item.kind === "activities")
+    return <ActivitiesGroupCard activities={item.activities} past={past} cardRef={cardRef} />;
+  return (
+    <EventCard
+      row={item.row}
+      setup={item.setup}
+      past={past}
+      activity={matchActivity(item.row, activities)}
+      cardRef={cardRef}
+    />
+  );
+}
+
+function MySchedule({ data, days }: { data: TripData; days: string[] }) {
+  const [name, , hydrated] = useDisplayName();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  if (!hydrated) return null;
+  if (!name) {
+    return (
+      <div className="py-8 text-center">
+        <p className="ui-body text-muted-foreground">
+          Pick your name so LILApp knows whose schedule to show.
+        </p>
+        <Link
+          to="/pick-name"
+          className="mt-4 inline-flex min-h-11 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground"
+        >
+          Pick your name
+        </Link>
+      </div>
+    );
+  }
+
+  const today = nowInVenice(now).date;
+  const day = days.includes(today)
+    ? today
+    : (days.find((d) => d > today) ?? days[days.length - 1] ?? today);
+  const mine = data.schedule.filter((r) =>
+    r.photographers.some((p) => p.toLowerCase() === name.toLowerCase()),
+  );
+  const { happening, upNext } = nowAndNext(mine, day, now);
+  const myActivities = data.activities.filter(
+    (a) => a.photographer.toLowerCase() === name.toLowerCase(),
+  );
+  const ambient = upNext
+    ? relativeUntil(upNext.date, upNext.callTime || upNext.startTime, now)
+    : "";
+
+  return (
+    <div>
+      <h2 className="ui-page-title">{formatDayLong(day)}</h2>
+      {ambient && !happening ? (
+        <p className="ui-body mt-1 text-muted-foreground">
+          Next call time <span className="font-semibold text-foreground">{ambient}</span>
+        </p>
+      ) : null}
+      {happening ? (
+        <section className="mt-4">
+          <h3 className="label-caps">Happening Now</h3>
+          <EventCard
+            row={happening}
+            setup={false}
+            past={false}
+            activity={matchActivity(happening, data.activities)}
+          />
+        </section>
+      ) : null}
+      {upNext ? (
+        <section className="mt-4 border-t border-border pt-4">
+          <h3 className="label-caps">Up Next</h3>
+          <EventCard
+            row={upNext}
+            setup={false}
+            past={false}
+            activity={matchActivity(upNext, data.activities)}
+          />
+        </section>
+      ) : null}
+      {myActivities.length > 0 && day === days.find((d) => rowsHaveActivityDay(data, d)) ? (
+        <section className="mt-4 border-t border-border pt-4">
+          <h3 className="label-caps">Your Activities</h3>
+          <ActivitiesGroupCard activities={myActivities} past={false} />
+        </section>
+      ) : null}
+      {!happening && !upNext ? <Quiet>Nothing scheduled for you on this day.</Quiet> : null}
+      <Link
+        to="/"
+        search={{ day, who: name }}
+        className="mt-6 flex min-h-11 w-full items-center justify-center rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary"
+      >
+        See My Full Day
+      </Link>
+    </div>
+  );
 }

@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Build the server bundle for Netlify Functions instead of the default
+  // Cloudflare target, so GitHub → Netlify deploys run the server functions.
+  nitro: { preset: "netlify" },
 });

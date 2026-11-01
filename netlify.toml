@@ -1,0 +1,5 @@
+# Netlify deploy config (GitHub -> Netlify).
+[build]
+  command = "bun run build"
+  publish = "dist"
+  functions = ".netlify/functions-internal"

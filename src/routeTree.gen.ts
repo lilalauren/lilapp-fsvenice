@@ -10,21 +10,37 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PackingRouteImport } from './routes/packing'
+import { Route as ActivitiesRouteImport } from './routes/activities'
+import { Route as BriefingRouteImport } from './routes/briefing'
+import { Route as GlanceRouteImport } from './routes/glance'
+import { Route as LookbookRouteImport } from './routes/lookbook'
 import { Route as PickNameRouteImport } from './routes/pick-name'
-import { Route as TravelRouteImport } from './routes/travel'
-import { Route as ScheduleFullRouteImport } from './routes/schedule.full'
-import { Route as ScheduleMineRouteImport } from './routes/schedule.mine'
-import { Route as ScheduleMineFullRouteImport } from './routes/schedule.mine_.full'
+import { Route as PrintRouteImport } from './routes/print'
+import { Route as ResumeRouteImport } from './routes/resume'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PackingRoute = PackingRouteImport.update({
-  id: '/packing',
-  path: '/packing',
+const ActivitiesRoute = ActivitiesRouteImport.update({
+  id: '/activities',
+  path: '/activities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BriefingRoute = BriefingRouteImport.update({
+  id: '/briefing',
+  path: '/briefing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GlanceRoute = GlanceRouteImport.update({
+  id: '/glance',
+  path: '/glance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LookbookRoute = LookbookRouteImport.update({
+  id: '/lookbook',
+  path: '/lookbook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PickNameRoute = PickNameRouteImport.update({
@@ -32,93 +48,90 @@ const PickNameRoute = PickNameRouteImport.update({
   path: '/pick-name',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TravelRoute = TravelRouteImport.update({
-  id: '/travel',
-  path: '/travel',
+const PrintRoute = PrintRouteImport.update({
+  id: '/print',
+  path: '/print',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ScheduleFullRoute = ScheduleFullRouteImport.update({
-  id: '/schedule/full',
-  path: '/schedule/full',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScheduleMineRoute = ScheduleMineRouteImport.update({
-  id: '/schedule/mine',
-  path: '/schedule/mine',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScheduleMineFullRoute = ScheduleMineFullRouteImport.update({
-  id: '/schedule/mine_/full',
-  path: '/schedule/mine/full',
+const ResumeRoute = ResumeRouteImport.update({
+  id: '/resume',
+  path: '/resume',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/packing': typeof PackingRoute
+  '/activities': typeof ActivitiesRoute
+  '/briefing': typeof BriefingRoute
+  '/glance': typeof GlanceRoute
+  '/lookbook': typeof LookbookRoute
   '/pick-name': typeof PickNameRoute
-  '/travel': typeof TravelRoute
-  '/schedule/full': typeof ScheduleFullRoute
-  '/schedule/mine': typeof ScheduleMineRoute
-  '/schedule/mine/full': typeof ScheduleMineFullRoute
+  '/print': typeof PrintRoute
+  '/resume': typeof ResumeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/packing': typeof PackingRoute
+  '/activities': typeof ActivitiesRoute
+  '/briefing': typeof BriefingRoute
+  '/glance': typeof GlanceRoute
+  '/lookbook': typeof LookbookRoute
   '/pick-name': typeof PickNameRoute
-  '/travel': typeof TravelRoute
-  '/schedule/full': typeof ScheduleFullRoute
-  '/schedule/mine': typeof ScheduleMineRoute
-  '/schedule/mine/full': typeof ScheduleMineFullRoute
+  '/print': typeof PrintRoute
+  '/resume': typeof ResumeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/packing': typeof PackingRoute
+  '/activities': typeof ActivitiesRoute
+  '/briefing': typeof BriefingRoute
+  '/glance': typeof GlanceRoute
+  '/lookbook': typeof LookbookRoute
   '/pick-name': typeof PickNameRoute
-  '/travel': typeof TravelRoute
-  '/schedule/full': typeof ScheduleFullRoute
-  '/schedule/mine': typeof ScheduleMineRoute
-  '/schedule/mine_/full': typeof ScheduleMineFullRoute
+  '/print': typeof PrintRoute
+  '/resume': typeof ResumeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/packing'
+    | '/activities'
+    | '/briefing'
+    | '/glance'
+    | '/lookbook'
     | '/pick-name'
-    | '/travel'
-    | '/schedule/full'
-    | '/schedule/mine'
-    | '/schedule/mine/full'
+    | '/print'
+    | '/resume'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/packing'
+    | '/activities'
+    | '/briefing'
+    | '/glance'
+    | '/lookbook'
     | '/pick-name'
-    | '/travel'
-    | '/schedule/full'
-    | '/schedule/mine'
-    | '/schedule/mine/full'
+    | '/print'
+    | '/resume'
   id:
     | '__root__'
     | '/'
-    | '/packing'
+    | '/activities'
+    | '/briefing'
+    | '/glance'
+    | '/lookbook'
     | '/pick-name'
-    | '/travel'
-    | '/schedule/full'
-    | '/schedule/mine'
-    | '/schedule/mine_/full'
+    | '/print'
+    | '/resume'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  PackingRoute: typeof PackingRoute
+  ActivitiesRoute: typeof ActivitiesRoute
+  BriefingRoute: typeof BriefingRoute
+  GlanceRoute: typeof GlanceRoute
+  LookbookRoute: typeof LookbookRoute
   PickNameRoute: typeof PickNameRoute
-  TravelRoute: typeof TravelRoute
-  ScheduleFullRoute: typeof ScheduleFullRoute
-  ScheduleMineRoute: typeof ScheduleMineRoute
-  ScheduleMineFullRoute: typeof ScheduleMineFullRoute
+  PrintRoute: typeof PrintRoute
+  ResumeRoute: typeof ResumeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -130,11 +143,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/packing': {
-      id: '/packing'
-      path: '/packing'
-      fullPath: '/packing'
-      preLoaderRoute: typeof PackingRouteImport
+    '/activities': {
+      id: '/activities'
+      path: '/activities'
+      fullPath: '/activities'
+      preLoaderRoute: typeof ActivitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/briefing': {
+      id: '/briefing'
+      path: '/briefing'
+      fullPath: '/briefing'
+      preLoaderRoute: typeof BriefingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/glance': {
+      id: '/glance'
+      path: '/glance'
+      fullPath: '/glance'
+      preLoaderRoute: typeof GlanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lookbook': {
+      id: '/lookbook'
+      path: '/lookbook'
+      fullPath: '/lookbook'
+      preLoaderRoute: typeof LookbookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pick-name': {
@@ -144,32 +178,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PickNameRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/travel': {
-      id: '/travel'
-      path: '/travel'
-      fullPath: '/travel'
-      preLoaderRoute: typeof TravelRouteImport
+    '/print': {
+      id: '/print'
+      path: '/print'
+      fullPath: '/print'
+      preLoaderRoute: typeof PrintRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/schedule/full': {
-      id: '/schedule/full'
-      path: '/schedule/full'
-      fullPath: '/schedule/full'
-      preLoaderRoute: typeof ScheduleFullRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/schedule/mine': {
-      id: '/schedule/mine'
-      path: '/schedule/mine'
-      fullPath: '/schedule/mine'
-      preLoaderRoute: typeof ScheduleMineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/schedule/mine_/full': {
-      id: '/schedule/mine_/full'
-      path: '/schedule/mine/full'
-      fullPath: '/schedule/mine/full'
-      preLoaderRoute: typeof ScheduleMineFullRouteImport
+    '/resume': {
+      id: '/resume'
+      path: '/resume'
+      fullPath: '/resume'
+      preLoaderRoute: typeof ResumeRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -177,12 +197,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  PackingRoute: PackingRoute,
+  ActivitiesRoute: ActivitiesRoute,
+  BriefingRoute: BriefingRoute,
+  GlanceRoute: GlanceRoute,
+  LookbookRoute: LookbookRoute,
   PickNameRoute: PickNameRoute,
-  TravelRoute: TravelRoute,
-  ScheduleFullRoute: ScheduleFullRoute,
-  ScheduleMineRoute: ScheduleMineRoute,
-  ScheduleMineFullRoute: ScheduleMineFullRoute,
+  PrintRoute: PrintRoute,
+  ResumeRoute: ResumeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

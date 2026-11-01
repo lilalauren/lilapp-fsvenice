@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AppShell } from "../components/lilapp/AppShell";
 
 function NotFoundComponent() {
   return (
@@ -76,25 +77,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "LILApp | Sabbatical 2026" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "LILApp | Four Seasons PPI EMEA Venice 2026" },
       {
         name: "description",
-        content: "Event Operations Platform — created by LILA PHOTO",
+        content:
+          "LILA PHOTO crew schedule for Four Seasons PPI EMEA, Danieli Venezia, November 5–8, 2026",
       },
       { name: "author", content: "LILA PHOTO" },
       { name: "apple-mobile-web-app-title", content: "LILApp" },
       { name: "theme-color", content: "#3a4a3a" },
-      { property: "og:title", content: "LILApp | Sabbatical 2026" },
+      { name: "robots", content: "noindex" },
+      { property: "og:title", content: "LILApp | Four Seasons PPI EMEA Venice 2026" },
       {
         property: "og:description",
-        content: "Event Operations Platform — created by LILA PHOTO",
+        content: "LILA PHOTO crew schedule — created by LILA PHOTO",
       },
-      { property: "og:image", content: "https://sabbatical.photapp.com/og-image.png" },
-      { property: "og:url", content: "https://sabbatical.photapp.com" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://sabbatical.photapp.com/og-image.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -128,18 +127,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AirtableFreshnessRefresher />
-      <Outlet />
+      <AppShell>
+        <Outlet />
+      </AppShell>
     </QueryClientProvider>
   );
 }
 
-const LIVE_AIRTABLE_QUERY_KEYS = new Set([
-  "agenda",
-  "excursions",
-  "team",
-  "roomDrops",
-  "travel",
-]);
+const LIVE_AIRTABLE_QUERY_KEYS = new Set(["trip"]);
 
 function AirtableFreshnessRefresher() {
   const queryClient = useQueryClient();
@@ -148,8 +143,7 @@ function AirtableFreshnessRefresher() {
     const refetchLiveAirtableQueries = () => {
       queryClient.refetchQueries({
         type: "active",
-        predicate: (query) =>
-          LIVE_AIRTABLE_QUERY_KEYS.has(String(query.queryKey[0] ?? "")),
+        predicate: (query) => LIVE_AIRTABLE_QUERY_KEYS.has(String(query.queryKey[0] ?? "")),
       });
     };
 

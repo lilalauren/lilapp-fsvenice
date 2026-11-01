@@ -19,7 +19,9 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0,
+    // Tabs render instantly: preload on render and reuse the shared trip data.
+    defaultPreload: "render",
+    defaultPreloadStaleTime: Infinity,
   });
 
   return router;

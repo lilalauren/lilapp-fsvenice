@@ -1,151 +1,171 @@
-// Time helpers. All display uses lowercase am/pm per LILApp spec.
+// Time helpers. Every comparison uses Venice wall-clock time (Europe/Rome),
+// whatever timezone the phone happens to be in. Times are displayed exactly
+// as typed in Airtable.
 
-// Parse "1:00 PM", "3 pm", "13:00", "2:00–2:45 pm" (returns first time as minutes).
+export const VENICE_TZ = "Europe/Rome";
+export const TIME_LABEL = "All times shown in Venice time (CET)";
+
+// Parse "1:00 PM", "~6:30 PM", "13:00", "6:45 AM (team leaves…)" → minutes.
+// Free text such as "TBD" or "Before 6:45 PM" returns null.
 export function parseTimeToMinutes(input?: string): number | null {
   if (!input) return null;
-  const cleaned = input.replace(/[\u2013\u2014]/g, "-").trim();
-  const first = cleaned.split(/\s*-\s*/)[0].trim();
-  // Match "H", "H:MM", with optional am/pm
-  const m = first.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm|AM|PM)?/);
+  const m = input
+    .replace(/[–—]/g, "-")
+    .trim()
+    .match(/^~?\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?/i);
   if (!m) return null;
   let h = parseInt(m[1], 10);
   const min = m[2] ? parseInt(m[2], 10) : 0;
-  const ampm = m[3]?.toLowerCase();
+  const ampm = m[3]?.toLowerCase().replace(/\./g, "");
   if (ampm === "pm" && h < 12) h += 12;
   if (ampm === "am" && h === 12) h = 0;
   if (h > 23 || min > 59) return null;
   return h * 60 + min;
 }
 
-// Normalize "1:00 PM" -> "1:00 pm"; "3 pm" -> "3 pm"; "13:00" -> "1:00 pm".
-export function formatTime(input?: string): string {
-  if (!input) return "";
-  const m = parseTimeToMinutes(input);
-  if (m == null) return input.trim().toLowerCase();
-  const h24 = Math.floor(m / 60);
-  const mm = m % 60;
-  const ampm = h24 >= 12 ? "pm" : "am";
-  const h12 = ((h24 + 11) % 12) + 1;
-  return mm === 0 ? `${h12} ${ampm}` : `${h12}:${String(mm).padStart(2, "0")} ${ampm}`;
-}
-
-// Format range "1:00 PM" .. "2:45 PM" -> "1:00–2:45 pm" (share ampm if same).
+// "7:00 PM" + "10:30 PM" → "7:00 PM – 10:30 PM".
 export function formatTimeRange(start?: string, end?: string): string {
-  const s = formatTime(start);
-  const e = formatTime(end);
-  if (s && e) {
-    const sAm = s.endsWith("am") || s.endsWith("pm");
-    const eAm = e.endsWith("am") || e.endsWith("pm");
-    if (sAm && eAm) {
-      const sSuffix = s.slice(-2);
-      const eSuffix = e.slice(-2);
-      if (sSuffix === eSuffix) {
-        return `${s.slice(0, -3)}–${e}`;
-      }
-    }
-    return `${s}–${e}`;
-  }
-  return s || e;
+  const s = start?.trim() ?? "";
+  const e = end?.trim() ?? "";
+  return s && e ? `${s} – ${e}` : s || e;
 }
 
-// SINGLE source of truth for "has this event elapsed?" comparisons.
-// Airtable times are treated as timezone-naive local wall-clock values —
-// "2:00 pm" means 2:00 pm in whatever timezone the device is currently in.
-// We build both the event moment and "now" from local components (year,
-// month, day, hours, minutes) — never through Date.parse of an ISO string
-// with 'Z', never through UTC conversion, no timezone offsets anywhere.
-// The device clock is the single reference; as phones auto-update
-// timezones country to country, comparisons follow automatically.
+/** Current date + minutes past midnight in Venice. */
+export function nowInVenice(now: Date = new Date()): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: VENICE_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  return {
+    date: `${get("year")}-${get("month")}-${get("day")}`,
+    minutes: (Number(get("hour")) % 24) * 60 + Number(get("minute")),
+  };
+}
+
+// SINGLE source of truth for "has this event finished?". An event isn't past
+// until its END time (falling back to start, then call, then end of day).
 export function isEventPast(
   row: { date?: string; endTime?: string; startTime?: string; callTime?: string },
   now: Date = new Date(),
 ): boolean {
-  if (!row.date) return false;
-  const [y, m, d] = row.date.split("-").map(Number);
-  if (!y || !m || !d) return false;
-  // Prefer END time — an event isn't "past" until it's actually over.
-  // Fall back to start, then call, then end-of-day.
-  const endMin =
+  const day = row.date?.slice(0, 10);
+  if (!day) return false;
+  const venice = nowInVenice(now);
+  if (day !== venice.date) return day < venice.date;
+  const end =
     parseTimeToMinutes(row.endTime) ??
     parseTimeToMinutes(row.startTime) ??
     parseTimeToMinutes(row.callTime);
-  const eventLocal = new Date(y, m - 1, d, 0, 0, 0, 0);
-  if (endMin != null) {
-    eventLocal.setHours(Math.floor(endMin / 60), endMin % 60, 0, 0);
-  } else {
-    eventLocal.setHours(23, 59, 0, 0);
-  }
-  const nowLocal = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-    now.getSeconds(),
-    0,
-  );
-  return eventLocal.getTime() < nowLocal.getTime();
+  return (end ?? 24 * 60 - 1) < venice.minutes;
 }
 
-// Back-compat wrapper — prefer isEventPast. Every comparison in the app
-// routes through isEventPast so they can't drift apart.
-export function isPast(dateISO?: string, callOrStart?: string, now: Date = new Date()): boolean {
-  return isEventPast({ date: dateISO, endTime: callOrStart }, now);
+/** Is the event running right now (between call/start and end)? */
+export function isHappeningNow(
+  row: { date?: string; endTime?: string; startTime?: string; callTime?: string },
+  now: Date = new Date(),
+): boolean {
+  const venice = nowInVenice(now);
+  if (row.date?.slice(0, 10) !== venice.date) return false;
+  const start = parseTimeToMinutes(row.startTime) ?? parseTimeToMinutes(row.callTime);
+  if (start == null || start > venice.minutes) return false;
+  return !isEventPast(row, now);
 }
 
-// "in Xm" / "in Xh Ym" / "now" / "" (past). Used ambiently.
+// "in Xm" / "in Xh Ym" / "now" / "" (past or no time). Used ambiently.
 export function relativeUntil(dateISO?: string, timeStr?: string, now: Date = new Date()): string {
-  if (!dateISO) return "";
   const mins = parseTimeToMinutes(timeStr);
-  if (mins == null) return "";
-  const [y, m, d] = dateISO.split("-").map(Number);
-  const target = new Date(y, m - 1, d, 0, 0, 0);
-  target.setMinutes(mins);
-  const diffMs = target.getTime() - now.getTime();
-  if (diffMs <= 0) return "now";
-  const totalMin = Math.round(diffMs / 60000);
-  if (totalMin < 60) return `in ${totalMin}m`;
-  const h = Math.floor(totalMin / 60);
-  const m2 = totalMin % 60;
-  if (h < 24) return m2 ? `in ${h}h ${m2}m` : `in ${h}h`;
-  const days = Math.floor(h / 24);
-  return `in ${days}d`;
+  if (!dateISO || mins == null) return "";
+  const venice = nowInVenice(now);
+  const dayDiff = Math.round(
+    (Date.parse(`${dateISO}T00:00:00Z`) - Date.parse(`${venice.date}T00:00:00Z`)) / 864e5,
+  );
+  const total = dayDiff * 24 * 60 + mins - venice.minutes;
+  if (total <= 0) return "now";
+  if (total < 60) return `in ${total}m`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h < 24) return m ? `in ${h}h ${m}m` : `in ${h}h`;
+  return `in ${Math.floor(h / 24)}d`;
 }
 
-export function todayISO(now: Date = new Date()): string {
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sept",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function parseDay(date: string): Date | null {
+  const d = new Date(`${date.slice(0, 10)}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-export function formatDateLong(dateISO?: string): string {
-  if (!dateISO) return "";
-  const [y, m, d] = dateISO.split("-").map(Number);
-  if (!y) return dateISO;
-  const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
+/** Dropdown label: "Thursday, Nov 5". */
+export function formatDayLabel(date: string): string {
+  const d = parseDay(date);
+  if (!d) return date;
+  return `${WEEKDAYS[d.getUTCDay()]}, ${MONTHS_SHORT[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+/** Day heading: "THURSDAY, November 5". */
+export function formatDayLong(date: string): string {
+  const d = parseDay(date);
+  if (!d) return date;
+  return `${WEEKDAYS[d.getUTCDay()]!.toUpperCase()}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+/** "Thursday, November 5" — matches the Day text Lauren uses in Lookbook and Attire. */
+export function formatDayPlain(date: string): string {
+  const d = parseDay(date);
+  if (!d) return date;
+  return `${WEEKDAYS[d.getUTCDay()]}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+/** "6:42 PM", "Yesterday 4:15 PM" or "Nov 6 4:15 PM" in Venice time. */
+export function formatChangeTime(iso: string, now: Date = new Date()): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const clock = new Intl.DateTimeFormat("en-US", {
+    timeZone: VENICE_TZ,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(d);
+  const day = (x: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: VENICE_TZ }).format(x);
+  if (day(d) === day(now)) return clock;
+  if (day(d) === day(new Date(now.getTime() - 864e5))) return `Yesterday ${clock}`;
+  const md = new Intl.DateTimeFormat("en-US", {
+    timeZone: VENICE_TZ,
+    month: "short",
     day: "numeric",
-  });
-}
-
-export function formatDateShort(dateISO?: string): string {
-  if (!dateISO) return "";
-  const [y, m, d] = dateISO.split("-").map(Number);
-  if (!y) return dateISO;
-  const dt = new Date(y, m - 1, d);
-  return dt.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-
-// Compact chip label, e.g. "WED · JUL 15" — always uppercase.
-export function formatDayShort(dateISO?: string): string {
-  if (!dateISO) return "";
-  const [y, m, d] = dateISO.split("-").map(Number);
-  if (!y) return dateISO;
-  const dt = new Date(y, m - 1, d);
-  const wk = dt.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase().replace(/\.$/, "");
-  const mo = dt.toLocaleDateString(undefined, { month: "short" }).toUpperCase().replace(/\.$/, "");
-  return `${wk} · ${mo} ${d}`;
+  }).format(d);
+  return `${md} ${clock}`;
 }
