@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -132,7 +133,7 @@ export function ImageStrip({ images, title }: { images: ViewerImage[]; title?: s
   return (
     <section>
       {title ? <h4 className="label-caps mb-1.5">{title}</h4> : null}
-      <ul className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
+      <ul className="-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1">
         {images.map((img) => (
           <li key={img.src} className="shrink-0 snap-start">
             <button
@@ -154,7 +155,9 @@ export function ImageStrip({ images, title }: { images: ViewerImage[]; title?: s
           </li>
         ))}
       </ul>
-      {open ? <ImageViewer image={open} onClose={() => setOpen(null)} /> : null}
+      {open
+        ? createPortal(<ImageViewer image={open} onClose={() => setOpen(null)} />, document.body)
+        : null}
     </section>
   );
 }

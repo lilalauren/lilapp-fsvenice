@@ -97,7 +97,7 @@ export function buildDayItems(
     ? activities.filter((a) => isAssigned([a.photographer], person))
     : activities;
   // The Activities table has no date; it belongs to the day of the first Activity row.
-  const activityAnchor = rows.find((r) => normalizeName(r.type) === "activity");
+  const activityAnchor = sortSchedule(rows).find((r) => normalizeName(r.type) === "activity");
 
   const items: DayItem[] = [];
   let activitiesPlaced = false;

@@ -128,6 +128,27 @@ describe("Schedule rules", () => {
     );
   });
 
+  it("anchors the Activities card on the earliest Activity row, not the first in Airtable", () => {
+    const rows = [
+      row({
+        id: "late",
+        eventName: "The Key to Venice by Design",
+        type: "Activity",
+        sortTime: "09:31",
+      }),
+      row({
+        id: "early",
+        eventName: "Unlocking Venetian Flavours (Part 1)",
+        type: "Activity",
+        sortTime: "09:00",
+      }),
+    ];
+    const items = buildDayItems(rows, [
+      activity({ id: "x", activity: "Unlocking Venetian Flavours" }),
+    ]);
+    assert.equal(items[0]?.kind, "activities");
+  });
+
   it("links Schedule rows to their Activities row by name", () => {
     const flavours = activity({ activity: "Unlocking Venetian Flavours" });
     assert.equal(
