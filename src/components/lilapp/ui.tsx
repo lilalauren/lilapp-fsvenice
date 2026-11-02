@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ImageZoomSurface } from "./ImageZoomSurface";
@@ -165,7 +165,10 @@ export function ImageStrip({ images, title }: { images: ViewerImage[]; title?: s
   );
 }
 
-/** Full-screen viewer: opens fitted to the phone's width; pinch to zoom, swipe for the next. */
+/**
+ * Full-screen viewer like Apple Photos: opens fitted to the phone's width, the picture
+ * follows your finger sideways and snaps to the next or previous one; pinch to zoom.
+ */
 export function ImageViewer({
   images,
   start = 0,
@@ -176,10 +179,24 @@ export function ImageViewer({
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(start);
+  const [drag, setDrag] = useState<number | null>(null);
   const image = images[index] ?? images[0]!;
   const many = images.length > 1;
-  const step = (n: 1 | -1) => setIndex((i) => (i + n + images.length) % images.length);
   const close = useRef<HTMLButtonElement>(null);
+  const go = (n: number) => setIndex(Math.min(images.length - 1, Math.max(0, n)));
+
+  const onPan = (dx: number) => {
+    // Resist at the first and last picture, like Photos.
+    const edge = (index === 0 && dx > 0) || (index === images.length - 1 && dx < 0);
+    setDrag(edge ? dx * 0.3 : dx);
+  };
+  const onPanEnd = (dx: number, velocity: number) => {
+    const width = window.innerWidth || 1;
+    if (dx < -width * 0.2 || velocity < -0.45) go(index + 1);
+    else if (dx > width * 0.2 || velocity > 0.45) go(index - 1);
+    setDrag(null);
+  };
+
   useEffect(() => {
     // iOS-safe scroll lock: pin the body where it was and restore on close.
     const old = document.body.style.cssText;
@@ -191,8 +208,8 @@ export function ImageViewer({
     close.current?.focus();
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % images.length);
-      if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + images.length) % images.length);
+      if (e.key === "ArrowRight") setIndex((i) => Math.min(images.length - 1, i + 1));
+      if (e.key === "ArrowLeft") setIndex((i) => Math.max(0, i - 1));
     };
     window.addEventListener("keydown", key);
     return () => {
@@ -201,6 +218,7 @@ export function ImageViewer({
       window.removeEventListener("keydown", key);
     };
   }, [onClose, images.length]);
+
   return (
     <div className="viewer" role="dialog" aria-modal="true" aria-label={image.caption}>
       <div className="viewer-bar">
@@ -223,36 +241,43 @@ export function ImageViewer({
         </button>
       </div>
       <div className="viewer-pan">
-        <ImageZoomSurface
-          key={image.src}
-          url={image.src}
-          caption={image.caption}
-          onClose={onClose}
-          onSwipe={many ? step : undefined}
-        />
-        {many ? (
-          <>
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              aria-label="Previous"
-              className="absolute top-1/2 left-2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => step(1)}
-              aria-label="Next"
-              className="absolute top-1/2 right-2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white"
-            >
-              <ChevronRight className="size-5" />
-            </button>
-          </>
-        ) : null}
+        <div
+          className="viewer-track"
+          style={{
+            // A thin dark gap between pictures, like Photos.
+            transform: `translate3d(calc(${-index} * (100% + 16px) + ${drag ?? 0}px), 0, 0)`,
+            transition: drag === null ? "transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1)" : "none",
+          }}
+        >
+          {images.map((img, i) => (
+            <div key={img.src} className="viewer-slide" aria-hidden={i !== index}>
+              {/* Only this picture and its neighbours are loaded. */}
+              {Math.abs(i - index) <= 1 ? (
+                <ImageZoomSurface
+                  url={img.src}
+                  caption={img.caption}
+                  onClose={onClose}
+                  onPan={i === index && many ? onPan : undefined}
+                  onPanEnd={i === index && many ? onPanEnd : undefined}
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
       </div>
       <div className="viewer-footer">
-        {many ? "Swipe for more · pinch to zoom · tap to close" : "Pinch to zoom · tap to close"}
+        {many ? (
+          <span className="inline-flex items-center gap-1.5" aria-hidden>
+            {images.map((img, i) => (
+              <span
+                key={img.src}
+                className={cn("size-1.5 rounded-full", i === index ? "bg-white" : "bg-white/35")}
+              />
+            ))}
+          </span>
+        ) : (
+          "Pinch to zoom · tap to close"
+        )}
       </div>
     </div>
   );

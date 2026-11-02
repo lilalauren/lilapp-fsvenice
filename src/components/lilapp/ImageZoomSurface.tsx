@@ -5,13 +5,16 @@ export function ImageZoomSurface({
   url,
   caption,
   onClose,
-  onSwipe,
+  onPan,
+  onPanEnd,
 }: {
   url: string;
   caption: string;
   onClose: () => void;
-  /** Called with +1 (next) or -1 (previous) on a sideways swipe while not zoomed in. */
-  onSwipe?: (step: 1 | -1) => void;
+  /** While not zoomed in, a one-finger drag reports its sideways distance (Photos-style paging). */
+  onPan?: (dx: number) => void;
+  /** The drag ended: distance and speed (px per ms), or 0, 0 when a pinch took over. */
+  onPanEnd?: (dx: number, velocity: number) => void;
 }) {
   const surface = useRef<HTMLDivElement>(null);
   const image = useRef<HTMLImageElement>(null);
@@ -19,8 +22,8 @@ export function ImageZoomSurface({
   const bounds = useRef<ZoomBounds>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
   const close = useRef(onClose);
   close.current = onClose;
-  const swipe = useRef(onSwipe);
-  swipe.current = onSwipe;
+  const pan = useRef({ onPan, onPanEnd });
+  pan.current = { onPan, onPanEnd };
   const apply = (state: ZoomState) => {
     zoom.current = clampPan(state, bounds.current);
     const img = image.current;
@@ -37,6 +40,7 @@ export function ImageZoomSurface({
     let down: { x: number; y: number; time: number } | undefined;
     let moved = false;
     let tapReady = false;
+    let paging = false;
     const fit = () => {
       if (!img.naturalWidth || !host.clientWidth || !host.clientHeight) return;
       const ratio = Math.min(
@@ -107,6 +111,13 @@ export function ImageZoomSurface({
           x: zoom.current.x + point.x - previous.x,
           y: zoom.current.y + point.y - previous.y,
         });
+      } else if (down && !pinched && pointers.size === 1) {
+        paging = true;
+        pan.current.onPan?.(point.x - down.x);
+      }
+      if (pinched && paging) {
+        paging = false;
+        pan.current.onPanEnd?.(0, 0);
       }
     };
     const end = (e: PointerEvent) => {
@@ -127,17 +138,11 @@ export function ImageZoomSurface({
       ) {
         tapReady = true;
       }
-      if (
-        e.type === "pointerup" &&
-        !pinched &&
-        down &&
-        pointers.size === 0 &&
-        zoom.current.scale <= 1.01
-      ) {
-        const dx = point.x - down.x;
-        const dy = point.y - down.y;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
-          swipe.current?.(dx < 0 ? 1 : -1);
+      if (paging && pointers.size === 0) {
+        paging = false;
+        const dx = down ? point.x - down.x : 0;
+        const elapsed = down ? Math.max(1, time - down.time) : 1;
+        pan.current.onPanEnd?.(e.type === "pointerup" ? dx : 0, dx / elapsed);
       }
       if (pointers.size === 0) down = undefined;
     };
