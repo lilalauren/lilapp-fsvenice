@@ -85,19 +85,23 @@ export type DayItem =
 /**
  * One day's run of show:
  * - every row with a Décor Advance gets its own SETUP line just ahead of it;
- * - the Activities table appears as one group card where Saturday's activities start.
+ * - optionally, the Activities table as one group card where Saturday's activities start.
  */
 export function buildDayItems(
   rows: ScheduleRow[],
   activities: ActivityRow[],
   person?: string | null,
+  { activitiesCard = false }: { activitiesCard?: boolean } = {},
 ): DayItem[] {
   const visible = person ? rows.filter((r) => isAssigned(r.photographers, person)) : rows;
   const myActivities = person
     ? activities.filter((a) => isAssigned([a.photographer], person))
     : activities;
   // The Activities table has no date; it belongs to the day of the first Activity row.
-  const activityAnchor = sortSchedule(rows).find((r) => normalizeName(r.type) === "activity");
+  // Off by default: the Schedule already lists each activity as its own row.
+  const activityAnchor = activitiesCard
+    ? sortSchedule(rows).find((r) => normalizeName(r.type) === "activity")
+    : undefined;
 
   const items: DayItem[] = [];
   let activitiesPlaced = false;

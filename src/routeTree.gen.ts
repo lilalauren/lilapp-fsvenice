@@ -16,6 +16,7 @@ import { Route as GlanceRouteImport } from './routes/glance'
 import { Route as LookbookRouteImport } from './routes/lookbook'
 import { Route as PickNameRouteImport } from './routes/pick-name'
 import { Route as PrintRouteImport } from './routes/print'
+import { Route as QuestionsRouteImport } from './routes/questions'
 import { Route as ResumeRouteImport } from './routes/resume'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,11 @@ const PrintRoute = PrintRouteImport.update({
   path: '/print',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuestionsRoute = QuestionsRouteImport.update({
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResumeRoute = ResumeRouteImport.update({
   id: '/resume',
   path: '/resume',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/lookbook': typeof LookbookRoute
   '/pick-name': typeof PickNameRoute
   '/print': typeof PrintRoute
+  '/questions': typeof QuestionsRoute
   '/resume': typeof ResumeRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/lookbook': typeof LookbookRoute
   '/pick-name': typeof PickNameRoute
   '/print': typeof PrintRoute
+  '/questions': typeof QuestionsRoute
   '/resume': typeof ResumeRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/lookbook': typeof LookbookRoute
   '/pick-name': typeof PickNameRoute
   '/print': typeof PrintRoute
+  '/questions': typeof QuestionsRoute
   '/resume': typeof ResumeRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/lookbook'
     | '/pick-name'
     | '/print'
+    | '/questions'
     | '/resume'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/lookbook'
     | '/pick-name'
     | '/print'
+    | '/questions'
     | '/resume'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/lookbook'
     | '/pick-name'
     | '/print'
+    | '/questions'
     | '/resume'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   LookbookRoute: typeof LookbookRoute
   PickNameRoute: typeof PickNameRoute
   PrintRoute: typeof PrintRoute
+  QuestionsRoute: typeof QuestionsRoute
   ResumeRoute: typeof ResumeRoute
 }
 
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/questions': {
+      id: '/questions'
+      path: '/questions'
+      fullPath: '/questions'
+      preLoaderRoute: typeof QuestionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resume': {
       id: '/resume'
       path: '/resume'
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   LookbookRoute: LookbookRoute,
   PickNameRoute: PickNameRoute,
   PrintRoute: PrintRoute,
+  QuestionsRoute: QuestionsRoute,
   ResumeRoute: ResumeRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,17 +1,17 @@
 import { useEffect, useState, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, FileText } from "lucide-react";
+import { ChevronRight, Map } from "lucide-react";
 
 import type { ActivityRow, ScheduleRow } from "@/lib/airtable.server";
 import { normalizeName } from "@/lib/schedule";
 import { parseTimeToMinutes, shortRange, shortTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { scheduleImages, type VeniceImage } from "@/lib/venice-images";
-import { Block, Field, ImageStrip, ImageViewer, NotesList } from "./ui";
+import { Block, Field, ImageViewer, NotesList } from "./ui";
 
 /**
- * Sabbatical's time column: "Call | 6:45 am" over "Event | 7–10 pm",
- * small label, hairline divider, then the time.
+ * Sabbatical's time column: "Call | 6:15 pm" stacked over "Event | 7–10 pm".
+ * A long range only wraps after the dash when it has to.
  */
 function TimeColumn({
   call,
@@ -22,25 +22,22 @@ function TimeColumn({
   event?: string;
   callLabel?: string;
 }) {
-  if (!call && !event) return <div className="w-[7.25rem] shrink-0" />;
-  // A long range wraps after the dash so it never runs into the event name.
-  const line = (label: string, value: string, strong: boolean) => {
+  if (!call && !event) return <div className="w-[6.75rem] shrink-0" />;
+  const line = (label: string, value: string) => {
     const [from, to] = value.split("–");
     return (
-      <div className="flex items-baseline gap-2">
-        <span className="w-9 shrink-0 text-right text-[11px] text-subtle">{label}</span>
+      <div className="flex items-baseline gap-1.5">
+        <span className="w-8 shrink-0 text-right text-[11px] text-subtle">{label}</span>
         <span className="h-3 w-px shrink-0 self-center bg-border" />
-        <span
-          className={cn(
-            "text-[14px] leading-tight whitespace-nowrap tabular-nums",
-            strong ? "font-semibold text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {from}
+        <span className="text-[14px] leading-tight font-semibold text-foreground tabular-nums">
+          <span className="whitespace-nowrap">
+            {from}
+            {to ? "–" : ""}
+          </span>
           {to ? (
             <>
-              –<br />
-              {to}
+              <wbr />
+              <span className="whitespace-nowrap">{to}</span>
             </>
           ) : null}
         </span>
@@ -48,9 +45,9 @@ function TimeColumn({
     );
   };
   return (
-    <div className="w-[7.25rem] shrink-0 space-y-1 pt-1 select-none">
-      {call ? line(callLabel, call, true) : null}
-      {event ? line("Event", event, !call) : null}
+    <div className="w-[6.75rem] shrink-0 space-y-1.5 pt-0.5 select-none">
+      {call ? line(callLabel, call) : null}
+      {event ? line("Event", event) : null}
     </div>
   );
 }
@@ -112,27 +109,65 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-/** Panattoni's BEO-number chip, for the deck's floor plans: one tap opens the zoom viewer. */
-function FloorPlanChip({ plans }: { plans: VeniceImage[] }) {
-  const [open, setOpen] = useState<VeniceImage | null>(null);
-  if (plans.length === 0) return null;
+/**
+ * Small pills at the card's bottom right: the deck's décor renders and its floor plans.
+ * Each opens the full-screen viewer, fitted to the phone's width.
+ */
+function MediaButtons({ decor, plans }: { decor: VeniceImage[]; plans: VeniceImage[] }) {
+  const [open, setOpen] = useState<VeniceImage[] | null>(null);
+  if (decor.length === 0 && plans.length === 0) return null;
+  const pill =
+    "inline-flex min-h-9 items-center gap-1.5 rounded-full bg-secondary pr-3 pl-1.5 text-[13px] font-semibold text-primary";
   return (
-    <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(plans[0]!);
-        }}
-        className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-secondary px-3 text-sm font-semibold text-primary"
-      >
-        <FileText className="size-4" aria-hidden />
-        {plans.length > 1 ? `Floor plans · ${plans.length}` : "Floor plan"}
-      </button>
+    <div className="flex justify-end gap-2 px-4 pb-3">
+      {decor.length ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(decor);
+          }}
+          className={pill}
+        >
+          <img
+            src={decor[0]!.src}
+            alt=""
+            loading="lazy"
+            className="size-6 rounded-full bg-muted object-cover"
+          />
+          Décor · {decor.length}
+        </button>
+      ) : null}
+      {plans.length ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(plans);
+          }}
+          className={cn(pill, "pl-3")}
+        >
+          <Map className="size-4" aria-hidden />
+          {plans.length > 1 ? `Layout · ${plans.length}` : "Layout"}
+        </button>
+      ) : null}
       {open
-        ? createPortal(<ImageViewer image={open} onClose={() => setOpen(null)} />, document.body)
+        ? createPortal(<ImageViewer images={open} onClose={() => setOpen(null)} />, document.body)
         : null}
-    </>
+    </div>
+  );
+}
+
+const isPlan = (i: VeniceImage) =>
+  /^(floor plan|layout|entrance layout|tunnel layout)/i.test(i.caption);
+
+/** Photographer names: visible on every card, all caps and bold. */
+function Photographers({ names }: { names: string[] }) {
+  if (names.length === 0) return null;
+  return (
+    <p className="mt-2 text-[13px] font-bold tracking-[0.08em] text-primary uppercase">
+      {names.join(" · ")}
+    </p>
   );
 }
 
@@ -154,18 +189,17 @@ export function EventCard({
   const [shown, setShown] = usePastToggle(past);
   const [open, setOpen] = useDetails(expandAll);
   const images = scheduleImages(row.eventName);
-  const plans = images.filter((i) => /^floor plan/i.test(i.caption));
+  const plans = images.filter(isPlan);
+  const decor = images.filter((i) => !isPlan(i));
   const callText = shortTime(row.callTime);
   const hasDetails = Boolean(
     row.boatTransfer ||
     row.departureSpot ||
     row.dressCode ||
-    row.vipFocus ||
     row.notes ||
     row.photographyRequests ||
     row.decorToShoot ||
     activity ||
-    images.length ||
     callText !== row.callTime,
   );
 
@@ -210,19 +244,17 @@ export function EventCard({
           {row.venue ? (
             <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">{row.venue}</p>
           ) : null}
-          {row.photographers.length ? (
-            <p className="mt-1 text-sm font-semibold text-primary">
-              {row.photographers.join(" · ")}
+          <Photographers names={row.photographers} />
+          {row.vipFocus ? (
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              <span className="label-caps mr-1">VIP</span>
+              {row.vipFocus}
             </p>
           ) : null}
         </div>
         {hasDetails ? <Chevron open={open} /> : null}
       </button>
-      {plans.length && !open ? (
-        <div className="-mt-2 px-4 pb-3 pl-[9rem]">
-          <FloorPlanChip plans={plans} />
-        </div>
-      ) : null}
+      <MediaButtons decor={decor} plans={plans} />
       {open ? (
         <div className="space-y-3 border-t border-border px-4 pt-3 pb-4">
           {callText !== row.callTime ? <Field label="Call" value={row.callTime} /> : null}
@@ -233,12 +265,10 @@ export function EventCard({
             </div>
           ) : null}
           <Field label="Dress Code" value={row.dressCode} />
-          <Field label="VIP Focus" value={row.vipFocus} />
           <Block label="Briefing" text={row.notes} />
           <Block label="Coverage Requirements" text={row.photographyRequests} />
           <Block label="Décor to Shoot" text={row.decorToShoot} />
           {activity ? <ActivityFacts activity={activity} /> : null}
-          <ImageStrip images={images} title="Décor & floor plans" />
           {past ? (
             <button
               type="button"
@@ -319,10 +349,13 @@ const covering = (a: ActivityRow) => normalizeName(a.lilaCovering) === "yes";
 /** Sabbatical's sage card for each activity: time, name, who runs it; tap for the rest. */
 export function ActivityCard({
   activity: a,
+  vips,
   expandAll,
   tone = "sage",
 }: {
   activity: ActivityRow;
+  /** Key People on this activity, e.g. "Carolyn Mar". */
+  vips?: string;
   expandAll?: boolean;
   tone?: "sage" | "white";
 }) {
@@ -349,8 +382,12 @@ export function ActivityCard({
           {a.runBy ? (
             <p className="mt-0.5 text-[15px] leading-snug text-foreground/75">{a.runBy}</p>
           ) : null}
-          {a.photographer ? (
-            <p className="mt-1 text-sm font-semibold text-primary">{a.photographer}</p>
+          <Photographers names={a.photographer ? [a.photographer] : []} />
+          {vips ? (
+            <p className="mt-1 text-[13px] text-foreground/75">
+              <span className="label-caps mr-1">VIP</span>
+              {vips}
+            </p>
           ) : null}
         </div>
         <Chevron open={open} />

@@ -1,6 +1,7 @@
 export type ZoomState = { scale: number; x: number; y: number };
 export type ZoomBounds = { width: number; height: number; imageWidth: number; imageHeight: number };
-export function centeredZoom(bounds: ZoomBounds, scale = 2.3): ZoomState {
+/** Opens the whole image fitted to the screen; pinch to zoom in. */
+export function centeredZoom(bounds: ZoomBounds, scale = 1): ZoomState {
   return clampPan(
     {
       scale,

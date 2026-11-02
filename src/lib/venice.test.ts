@@ -122,7 +122,12 @@ describe("Schedule rules", () => {
       row({ id: "dep", eventName: "Activity Departures", type: "Transfer", sortTime: "08:45" }),
       row({ id: "a1", eventName: "A Window Into Murano", type: "Activity", sortTime: "09:30" }),
     ];
-    const items = buildDayItems(rows, [activity({ id: "m", activity: "A Window Into Murano" })]);
+    const items = buildDayItems(
+      rows,
+      [activity({ id: "m", activity: "A Window Into Murano" })],
+      null,
+      { activitiesCard: true },
+    );
     assert.deepEqual(
       items.map((i) => i.kind),
       ["event", "activities", "event"],
@@ -144,10 +149,24 @@ describe("Schedule rules", () => {
         sortTime: "09:00",
       }),
     ];
-    const items = buildDayItems(rows, [
-      activity({ id: "x", activity: "Unlocking Venetian Flavours" }),
-    ]);
+    const items = buildDayItems(
+      rows,
+      [activity({ id: "x", activity: "Unlocking Venetian Flavours" })],
+      null,
+      { activitiesCard: true },
+    );
     assert.equal(items[0]?.kind, "activities");
+  });
+
+  it("leaves the Activities group card out of the Schedule by default", () => {
+    const rows = [
+      row({ id: "a1", eventName: "A Window Into Murano", type: "Activity", sortTime: "09:30" }),
+    ];
+    const items = buildDayItems(rows, [activity({ id: "m", activity: "A Window Into Murano" })]);
+    assert.deepEqual(
+      items.map((i) => i.kind),
+      ["event"],
+    );
   });
 
   it("links Schedule rows to their Activities row by name", () => {

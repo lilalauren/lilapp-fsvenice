@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { ActivityCard, ExpandAll } from "@/components/lilapp/cards";
 import { Quiet } from "@/components/lilapp/ui";
+import { activityVips } from "@/lib/people";
 import { normalizeName, sortActivities } from "@/lib/schedule";
 import { formatDayLong } from "@/lib/time";
 import { tripQueryOptions } from "@/lib/trip";
@@ -55,7 +56,11 @@ function ActivitiesPage() {
             <ul className="space-y-3">
               {g.rows.map((a) => (
                 <li key={a.id}>
-                  <ActivityCard activity={a} expandAll={expandAll} />
+                  <ActivityCard
+                    activity={a}
+                    vips={activityVips(data.people, a.activity)}
+                    expandAll={expandAll}
+                  />
                 </li>
               ))}
             </ul>

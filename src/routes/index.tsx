@@ -3,7 +3,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Printer } from "lucide-react";
 
-import { ActivitiesGroupCard, DecorCard, EventCard, ExpandAll } from "@/components/lilapp/cards";
+import {
+  ActivitiesGroupCard,
+  ActivityCard,
+  DecorCard,
+  EventCard,
+  ExpandAll,
+} from "@/components/lilapp/cards";
 import { Quiet, SelectBox } from "@/components/lilapp/ui";
 import {
   buildDayItems,
@@ -17,7 +23,7 @@ import {
 import { formatDayLabel, formatDayLong, nowInVenice, relativeUntil, TIME_LABEL } from "@/lib/time";
 import { tripQueryOptions } from "@/lib/trip";
 import { useDisplayName } from "@/lib/use-display-name";
-import { teamNames } from "@/lib/people";
+import { activityVips, teamNames } from "@/lib/people";
 import type { ActivityRow, TripData } from "@/lib/airtable.server";
 
 type ScheduleSearch = { day?: string; who?: string; view?: "mine" };
@@ -265,7 +271,12 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
 
   return (
     <div>
-      <h2 className="ui-page-title">{formatDayLong(day)}</h2>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="ui-page-title">{formatDayLong(day)}</h2>
+        <Link to="/pick-name" className="ui-label shrink-0 text-[11px]">
+          {name} · change
+        </Link>
+      </div>
       {ambient && !happening ? (
         <p className="ui-body mt-1 text-muted-foreground">
           Next call time <span className="font-semibold text-foreground">{ambient}</span>
@@ -296,7 +307,11 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
       {myActivities.length > 0 && day === days.find((d) => rowsHaveActivityDay(data, d)) ? (
         <section className="mt-4">
           <h3 className="ui-label mb-2">Your Activities</h3>
-          <ActivitiesGroupCard activities={myActivities} past={false} />
+          <div className="space-y-3">
+            {myActivities.map((a) => (
+              <ActivityCard key={a.id} activity={a} vips={activityVips(data.people, a.activity)} />
+            ))}
+          </div>
         </section>
       ) : null}
       {!happening && !upNext ? <Quiet>Nothing scheduled for you on this day.</Quiet> : null}

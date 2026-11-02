@@ -7,7 +7,8 @@ import { NotesList, Quiet } from "@/components/lilapp/ui";
 import type { PersonRow, TripData } from "@/lib/airtable.server";
 import { peopleInGroup, RESUME_GROUPS } from "@/lib/people";
 import { personInitials, resumePhoto } from "@/lib/resume-photos";
-import { normalizeName, scheduleDays } from "@/lib/schedule";
+import { findSection, guestCounts, rowsFor } from "@/lib/briefing";
+import { normalizeName } from "@/lib/schedule";
 import { tripQueryOptions } from "@/lib/trip";
 
 export const Route = createFileRoute("/resume")({
@@ -20,7 +21,13 @@ function ResumePage() {
   const { data } = useSuspenseQuery(tripQueryOptions);
   // Every section starts closed, like Panattoni.
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
-  const titles = RESUME_GROUPS.map((g) => g.label);
+  const resumeRows = rowsFor(data.briefing, "resume");
+  const dmcNotes = resumeRows.find((r) => normalizeName(r.section).startsWith("dmc"));
+  // Any other Briefing rows set to "Resume" get their own section at the end.
+  const extra = resumeRows.filter(
+    (r) => r !== dmcNotes && !["event overview", "guest counts"].includes(normalizeName(r.section)),
+  );
+  const titles = [...RESUME_GROUPS.map((g) => g.label), ...extra.map((r) => r.id)];
   const allOpen = titles.every((t) => openSections.has(t));
   const toggle = (title: string, open: boolean) =>
     setOpenSections((prev) => {
@@ -44,6 +51,7 @@ function ResumePage() {
       ) : (
         RESUME_GROUPS.map((g) => {
           const people = peopleInGroup(data.people, g.label);
+          const notes = g.label.startsWith("DMC") ? dmcNotes : undefined;
           return (
             <Section
               key={g.label}
@@ -52,7 +60,12 @@ function ResumePage() {
               open={openSections.has(g.label)}
               onToggle={(open) => toggle(g.label, open)}
             >
-              {people.length === 0 ? (
+              {notes ? (
+                <div className="card p-4">
+                  <NotesList notes={notes.content} />
+                </div>
+              ) : null}
+              {people.length === 0 && !notes ? (
                 <Quiet>No one in this group yet.</Quiet>
               ) : (
                 people.map((p) => <Person key={p.id} person={p} />)
@@ -61,30 +74,42 @@ function ResumePage() {
           );
         })
       )}
+      {extra.map((r) => (
+        <Section
+          key={r.id}
+          title={r.section}
+          open={openSections.has(r.id)}
+          onToggle={(open) => toggle(r.id, open)}
+        >
+          <div className="card p-4">
+            <NotesList notes={r.content} />
+          </div>
+        </Section>
+      ))}
     </>
   );
 }
 
-/** Panattoni's sage hero: the event and a few numbers, all from Airtable. */
+/** Panattoni's sage hero: the Event overview from Airtable, plus the headcounts. */
 function Hero({ data }: { data: TripData }) {
-  const overview = data.briefing.find((b) => normalizeName(b.section) === "event overview");
-  const lines = overview?.content.split(/\r?\n/).filter(Boolean) ?? [];
+  const overview = findSection(data.briefing, "event overview");
+  const lines = (overview?.content.split(/\r?\n/) ?? [])
+    .map((l) => l.replace(/^[-–—•*·]+\s*/, "").trim())
+    .filter(Boolean)
+    // The Schedule already says "Venice time"; keep the green box short.
+    .filter((l) => !/^all times/i.test(l));
+  const leadership = peopleInGroup(data.people, "Leadership").length;
   const stats = [
-    { value: scheduleDays(data.schedule).length, label: "Days" },
-    { value: data.schedule.length, label: "Schedule" },
-    { value: data.activities.length, label: "Activities" },
-    { value: data.people.length, label: "Key People" },
-  ].filter((s) => s.value > 0);
+    ...guestCounts(data.briefing),
+    ...(leadership ? [{ label: "Leadership", value: String(leadership) }] : []),
+  ];
   return (
     <section className="rounded-[18px] bg-sage px-5 py-5 text-foreground">
-      <p className="text-xs font-semibold tracking-[0.14em] text-foreground/70 uppercase">
-        Preferred Partner Insider
-      </p>
-      <h2 className="mt-1 font-serif text-2xl leading-tight italic">
+      <h2 className="font-serif text-[1.6rem] leading-tight italic">
         {lines[0] ?? "Four Seasons PPI EMEA 2026"}
       </h2>
-      {lines.slice(1, 3).map((l, i) => (
-        <p key={i} className="mt-2 text-[15px] leading-relaxed text-foreground/85">
+      {lines.slice(1).map((l, i) => (
+        <p key={i} className="mt-1.5 text-[15px] leading-snug text-foreground/85">
           {l}
         </p>
       ))}
@@ -106,9 +131,13 @@ function Hero({ data }: { data: TripData }) {
   );
 }
 
+// The group heading already says Four Seasons / Danieli, so only other companies are shown.
+const OBVIOUS = ["four seasons", "danieli, venezia", "danieli"];
+
 function Person({ person: p }: { person: PersonRow }) {
   const photo = resumePhoto(p.name, p.photo);
-  const role = [p.title, p.company].filter(Boolean).join(" · ");
+  const company = OBVIOUS.includes(normalizeName(p.company)) ? "" : p.company;
+  const role = [p.title, company].filter(Boolean).join(" · ");
   return (
     <article className="card p-4">
       <div className="flex items-center gap-3.5">
@@ -129,19 +158,27 @@ function Person({ person: p }: { person: PersonRow }) {
         )}
         <div className="min-w-0">
           <h3 className="text-[17px] leading-snug font-semibold text-foreground">{p.name}</h3>
-          {role ? <p className="mt-0.5 text-sm text-muted-foreground">{role}</p> : null}
-          {p.activity ? <p className="text-sm text-muted-foreground">{p.activity}</p> : null}
+          {role ? (
+            <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{role}</p>
+          ) : null}
+          {p.activity ? (
+            <p className="mt-1 text-[13px] font-semibold text-primary">{p.activity}</p>
+          ) : null}
+          {p.personalAttention ? (
+            <p className="mt-1 text-[13px] leading-snug text-foreground/75">
+              {p.personalAttention.replace(/\s*\n+\s*/g, " ")}
+            </p>
+          ) : null}
+          {p.phone ? (
+            <a
+              href={`tel:${p.phone.replace(/[^\d+]/g, "")}`}
+              className="inline-flex min-h-9 items-center text-sm font-semibold text-primary"
+            >
+              {p.phone}
+            </a>
+          ) : null}
         </div>
       </div>
-      {p.personalAttention ? <NotesList notes={p.personalAttention} className="mt-3" /> : null}
-      {p.phone ? (
-        <a
-          href={`tel:${p.phone.replace(/[^\d+]/g, "")}`}
-          className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-primary"
-        >
-          {p.phone}
-        </a>
-      ) : null}
     </article>
   );
 }

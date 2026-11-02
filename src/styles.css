@@ -157,11 +157,19 @@ html {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+/* No rubber-band scrolling past the end of the page into empty background. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
 
 /* Full-screen image viewer with pinch-zoom. */
 .viewer {
   position: fixed;
   inset: 0;
+  /* Pinches anywhere in the viewer zoom the picture, never the page behind it. */
+  touch-action: none;
+  overscroll-behavior: contain;
   z-index: 100;
   background: #0f120f;
   color: #ffffff;

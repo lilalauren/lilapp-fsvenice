@@ -1,15 +1,26 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, CalendarRange, Compass, Shirt, UserRound } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BookOpen,
+  CalendarDays,
+  CalendarRange,
+  CircleHelp,
+  Compass,
+  Shirt,
+  Smartphone,
+  UserRound,
+} from "lucide-react";
 
-import { useDisplayName } from "@/lib/use-display-name";
+import { cventUrl } from "@/lib/briefing";
+import { tripQueryOptions } from "@/lib/trip";
 import { OfflineBanner } from "./OfflineBanner";
 import { UpdatesBell } from "./UpdatesBell";
 
 const tabs = [
+  { to: "/resume", label: "Resume", icon: UserRound },
   { to: "/", label: "Schedule", icon: CalendarDays },
   { to: "/activities", label: "Activities", icon: Compass },
-  { to: "/resume", label: "Resume", icon: UserRound },
   { to: "/lookbook", label: "Lookbook", icon: Shirt },
   { to: "/briefing", label: "Briefing", icon: BookOpen },
 ] as const;
@@ -20,28 +31,34 @@ const TITLES: Record<string, string> = {
   "/resume": "Resume",
   "/lookbook": "Lookbook",
   "/briefing": "Briefing",
-  "/glance": "Program at a Glance",
+  "/glance": "At a Glance",
+  "/questions": "Questions",
 };
 
 export const roundButton =
-  "inline-flex size-11 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)]";
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)]";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [name] = useDisplayName();
+  const { data: trip } = useQuery(tripQueryOptions);
+  // Header extras wait for the first client render so server and phone HTML match.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const data = mounted ? trip : undefined;
+  const cvent = data ? cventUrl(data.briefing) : undefined;
+  const pending = data ? data.questions.filter((q) => !q.done).length : 0;
   // Print and name-picking pages render without the app chrome.
   if (pathname.startsWith("/print") || pathname.startsWith("/pick-name")) {
     return <div className="min-h-screen bg-background">{children}</div>;
   }
-  const initial = name ? name.trim().charAt(0).toUpperCase() : "?";
 
   return (
     <div className="min-h-screen bg-background pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center gap-1.5 px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold tracking-[0.14em] text-subtle uppercase">
-              LILApp · PPI EMEA Venice
+              LILApp · Venice
             </p>
             <h1 className="mt-0.5 truncate font-serif text-[1.65rem] leading-tight tracking-[0.06em] text-foreground uppercase">
               {TITLES[pathname] ?? "LILApp"}
@@ -50,13 +67,29 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/glance" aria-label="Program at a Glance" className={roundButton}>
             <CalendarRange className="size-5" />
           </Link>
+          {cvent ? (
+            <a
+              href={cvent}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open the client's Cvent app"
+              className={roundButton}
+            >
+              <Smartphone className="size-5" />
+            </a>
+          ) : null}
           <UpdatesBell />
           <Link
-            to="/pick-name"
-            aria-label={name ? `${name} — change name` : "Pick your name"}
-            className={`${roundButton} font-semibold`}
+            to="/questions"
+            aria-label="Pending questions"
+            className={`${roundButton} relative`}
           >
-            {initial}
+            <CircleHelp className="size-5" />
+            {pending ? (
+              <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+                {pending}
+              </span>
+            ) : null}
           </Link>
         </div>
         <OfflineBanner />

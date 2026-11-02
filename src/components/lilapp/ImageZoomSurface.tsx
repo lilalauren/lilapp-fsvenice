@@ -5,10 +5,13 @@ export function ImageZoomSurface({
   url,
   caption,
   onClose,
+  onSwipe,
 }: {
   url: string;
   caption: string;
   onClose: () => void;
+  /** Called with +1 (next) or -1 (previous) on a sideways swipe while not zoomed in. */
+  onSwipe?: (step: 1 | -1) => void;
 }) {
   const surface = useRef<HTMLDivElement>(null);
   const image = useRef<HTMLImageElement>(null);
@@ -16,6 +19,8 @@ export function ImageZoomSurface({
   const bounds = useRef<ZoomBounds>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
   const close = useRef(onClose);
   close.current = onClose;
+  const swipe = useRef(onSwipe);
+  swipe.current = onSwipe;
   const apply = (state: ZoomState) => {
     zoom.current = clampPan(state, bounds.current);
     const img = image.current;
@@ -121,6 +126,18 @@ export function ImageZoomSurface({
         Math.hypot(point.x - down.x, point.y - down.y) <= 8
       ) {
         tapReady = true;
+      }
+      if (
+        e.type === "pointerup" &&
+        !pinched &&
+        down &&
+        pointers.size === 0 &&
+        zoom.current.scale <= 1.01
+      ) {
+        const dx = point.x - down.x;
+        const dy = point.y - down.y;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+          swipe.current?.(dx < 0 ? 1 : -1);
       }
       if (pointers.size === 0) down = undefined;
     };

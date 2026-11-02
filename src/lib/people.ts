@@ -22,3 +22,19 @@ export function teamNames(data: TripData): string[] {
   if (fromTeam.length) return fromTeam;
   return Array.from(new Set(data.schedule.flatMap((r) => r.photographers))).sort();
 }
+
+/** Key People on an activity (their Activity field names it), not counting DMC or client staff. */
+export function activityVips(people: PersonRow[], activityName: string): string {
+  const target = normalizeName(activityName.replace(/\s*\((part \d+|backup)\)\s*$/i, ""));
+  if (!target) return "";
+  return people
+    .filter((p) => !["dmc", "client contact"].includes(normalizeName(p.group)))
+    .filter((p) =>
+      p.activity
+        .split(/[;,\n]/)
+        .map(normalizeName)
+        .some((a) => a && (a === target || a.startsWith(target) || target.startsWith(a))),
+    )
+    .map((p) => p.name)
+    .join(", ");
+}

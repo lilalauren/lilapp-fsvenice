@@ -191,7 +191,14 @@ export type TeamRow = {
   notes: string;
 };
 
-export type BriefingRow = { id: string; section: string; content: string; order: number | null };
+export type BriefingRow = {
+  id: string;
+  section: string;
+  content: string;
+  order: number | null;
+  /** "Briefing" (or empty), "Resume" or "Hidden". */
+  showOn: string;
+};
 
 export type QuestionRow = {
   id: string;
@@ -333,6 +340,7 @@ export function tripFromRecords(raw: Partial<Record<TableKey, AirtableRecord[] |
       section: str(f["Section"]),
       content: str(f["Content"]),
       order: num(f["Order"]),
+      showOn: str(f["Show On"]),
     }))
       .filter((r) => r.section || r.content)
       .sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
