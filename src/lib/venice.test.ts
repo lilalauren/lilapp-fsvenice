@@ -1,3 +1,4 @@
+import { amenitiesForDay } from "./briefing";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
@@ -292,5 +293,25 @@ describe("Deck and Lookbook images", () => {
     assert.equal(scheduleImages("Cocktail Reception")[1]?.caption, "Floor plan · cocktail");
     assert.equal(scheduleImages("1:1 Appointments").length, 0);
     assert.equal(lookbookImages("Activities: Unlock Venice")[0]?.caption, "Lookbook");
+  });
+});
+
+describe("amenities by day", () => {
+  it("picks that weekday's lines from the Amenities row", () => {
+    const rows = [
+      {
+        id: "a",
+        section: "Amenities",
+        content:
+          "Thursday welcome amenity: flowers\nThursday PM amenity: pajama\nFriday turndown: diffuser",
+        order: 7,
+        showOn: "Briefing",
+      },
+    ];
+    assert.deepEqual(amenitiesForDay(rows, "Thursday"), [
+      "Welcome amenity: flowers",
+      "PM amenity: pajama",
+    ]);
+    assert.deepEqual(amenitiesForDay(rows, "Sunday"), []);
   });
 });
