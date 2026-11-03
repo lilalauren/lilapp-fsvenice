@@ -34,6 +34,10 @@ import { amenitiesForDay } from "@/lib/briefing";
 import { activityVips, teamNames } from "@/lib/people";
 import type { ActivityRow, TripData } from "@/lib/airtable.server";
 
+// Venice isn't printed, so the Print briefing link is hidden. The /print page stays in
+// the code: set this to true to bring the link back for future events.
+const SHOW_PRINT = false;
+
 type ScheduleSearch = { day?: string; who?: string; view?: "mine" };
 
 const pick = (search: Record<string, unknown>, key: string) =>
@@ -167,14 +171,18 @@ function FullSchedule({
         </SelectBox>
       </div>
       <div className="mt-1 flex items-center justify-between">
-        <Link
-          to="/print"
-          search={{ day: day || undefined, who: who || undefined }}
-          className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-semibold text-primary"
-        >
-          <Printer className="size-4" aria-hidden />
-          Print briefing
-        </Link>
+        {SHOW_PRINT ? (
+          <Link
+            to="/print"
+            search={{ day: day || undefined, who: who || undefined }}
+            className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-sm font-semibold text-primary"
+          >
+            <Printer className="size-4" aria-hidden />
+            Print briefing
+          </Link>
+        ) : (
+          <span />
+        )}
         <ExpandAll allOpen={Boolean(expandAll)} onClick={() => setExpandAll(!expandAll)} />
       </div>
       <p className="text-sm text-muted-foreground">{TIME_LABEL}</p>
