@@ -273,7 +273,9 @@ export function tripFromRecords(raw: Partial<Record<TableKey, AirtableRecord[] |
       vipFocus: str(f["VIP Focus"]),
       notes: str(f["Briefing"] ?? f["Notes"]),
       decorToShoot: str(f["Décor to Shoot"]),
-      photographyRequests: str(f["Coverage Requirements"] ?? f["Photography Requests"]),
+      photographyRequests: str(
+        f["Coverage Assignments"] ?? f["Coverage Requirements"] ?? f["Photography Requests"],
+      ),
       rush: f["Rush"] === true,
       lastModified: str(f["Last modified"]),
     })).filter((r) => r.eventName || r.startTime || r.venue || r.notes),

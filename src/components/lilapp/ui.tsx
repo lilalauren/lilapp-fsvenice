@@ -89,7 +89,7 @@ export function Block({ label, text }: { label: string; text?: string }) {
   if (!text) return null;
   return (
     <section>
-      <h4 className="label-caps mb-1">{label}</h4>
+      <h4 className="label-caps mb-1 font-bold text-foreground">{label}</h4>
       <NotesList notes={text} />
     </section>
   );

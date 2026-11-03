@@ -261,7 +261,7 @@ export function EventCard({
       </button>
       <MediaButtons decor={decor} plans={plans} />
       {open ? (
-        <div className="space-y-3 border-t border-border px-4 pt-3 pb-4">
+        <div className="space-y-5 border-t border-border px-4 pt-3 pb-4">
           {/* 1. Where to be */}
           {callNote ? <Field label="Call" value={row.callTime} /> : null}
           {row.departureSpot || row.boatTransfer || activity?.meetingPoint ? (
@@ -271,11 +271,11 @@ export function EventCard({
               <Field label="Boat" value={row.boatTransfer} />
             </div>
           ) : null}
-          {/* 2. What to photograph */}
-          <Block label="Coverage Requirements" text={row.photographyRequests} />
-          {decorCardShown ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
-          {/* 3. Briefing */}
+          {/* 2. What to know */}
           <Block label="Briefing" text={row.notes} />
+          {/* 3. What to photograph */}
+          <Block label="Coverage Assignments" text={row.photographyRequests} />
+          {decorCardShown ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
           {past ? (
             <button
               type="button"
