@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "LILA PHOTO crew schedule — created by LILA PHOTO",
       },
       { property: "og:type", content: "website" },
+      // Link previews (iMessage, WhatsApp) need the full address of the image.
+      { property: "og:image", content: "https://lilappfsvenice.netlify.app/lilapp-preview.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://lilappfsvenice.netlify.app/lilapp-preview.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -104,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon-v2.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),

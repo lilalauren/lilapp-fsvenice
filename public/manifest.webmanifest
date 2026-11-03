@@ -3,8 +3,8 @@
   "short_name": "LILApp",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3a4a3a",
+  "background_color": "#40462a",
+  "theme_color": "#40462a",
   "icons": [
     {
       "src": "/icon-192.png",
