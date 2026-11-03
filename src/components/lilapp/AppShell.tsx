@@ -36,7 +36,7 @@ const TITLES: Record<string, string> = {
 };
 
 export const roundButton =
-  "inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)]";
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)] outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {TITLES[pathname] ?? "LILApp"}
             </h1>
           </div>
-          <Link to="/glance" aria-label="Program at a Glance" className={roundButton}>
+          <Link to="/glance" aria-label="At a Glance" title="At a Glance" className={roundButton}>
             <CalendarRange className="size-5" />
           </Link>
           {cvent ? (
@@ -72,7 +72,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               href={cvent}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Open the client's Cvent app"
+              aria-label="Client App (Cvent)"
+              title="Client App (Cvent)"
               className={roundButton}
             >
               <Smartphone className="size-5" />
@@ -81,7 +82,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <UpdatesBell />
           <Link
             to="/questions"
-            aria-label="Pending questions"
+            aria-label="Pending Questions"
+            title="Pending Questions"
             className={`${roundButton} relative`}
           >
             <CircleHelp className="size-5" />

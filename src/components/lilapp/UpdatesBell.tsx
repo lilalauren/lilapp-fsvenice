@@ -45,7 +45,8 @@ export function UpdatesBell() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={updates.length ? `${updates.length} updates` : "Updates"}
-        className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)]"
+        title="Updates"
+        className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)] outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <Bell className="size-5" />
         {updates.length > 0 && (
@@ -63,7 +64,16 @@ export function UpdatesBell() {
             aria-label="Updates"
           >
             <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top))] pb-2">
-              <h2 className="ui-page-title">Updates</h2>
+              <h2 className="ui-page-title min-w-0 flex-1">Updates</h2>
+              {updates.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setSeen(markSeen(updates))}
+                  className="ui-label min-h-11 px-3"
+                >
+                  Clear all
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -75,45 +85,37 @@ export function UpdatesBell() {
             </div>
             <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto px-4 pb-8">
               <p className="ui-body text-muted-foreground">
-                Changes in Airtable since you last looked. Tap one to go to it.
+                Changes in Airtable since you last looked. Tap one to go to it and clear it, or
+                Clear all once you've checked them.
               </p>
               {updates.length === 0 ? (
                 <p className="ui-body py-10 text-center text-muted-foreground">
                   You're up to date.
                 </p>
               ) : (
-                <>
-                  <ul className="mt-3 divide-y divide-border">
-                    {updates.map((u) => (
-                      <li key={u.id}>
-                        <button
-                          type="button"
-                          onClick={() => go(u)}
-                          className="flex min-h-14 w-full items-center gap-3 py-3 text-left"
-                        >
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-semibold text-foreground">{u.title}</span>
-                            <span className="ui-body block text-muted-foreground">
-                              {[u.kind === "schedule" ? "Schedule" : "Key People", u.detail]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </span>
+                <ul className="mt-3 divide-y divide-border">
+                  {updates.map((u) => (
+                    <li key={u.id}>
+                      <button
+                        type="button"
+                        onClick={() => go(u)}
+                        className="flex min-h-14 w-full items-center gap-3 py-3 text-left"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-semibold text-foreground">{u.title}</span>
+                          <span className="ui-body block text-muted-foreground">
+                            {[u.kind === "schedule" ? "Schedule" : "Key People", u.detail]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </span>
-                          <span className="shrink-0 text-xs text-subtle">
-                            {formatChangeTime(u.lastModified)}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={() => setSeen(markSeen(updates))}
-                    className="mt-4 min-h-11 w-full rounded-md border border-border text-sm font-medium text-foreground hover:bg-secondary"
-                  >
-                    Mark all as seen
-                  </button>
-                </>
+                        </span>
+                        <span className="shrink-0 text-xs text-subtle">
+                          {formatChangeTime(u.lastModified)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>,
