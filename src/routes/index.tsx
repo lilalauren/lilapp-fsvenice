@@ -6,11 +6,13 @@ import { Printer } from "lucide-react";
 import {
   ActivitiesGroupCard,
   ActivityCard,
+  AmenityCard,
+  isAmenityRow,
   DecorCard,
   EventCard,
   ExpandAll,
 } from "@/components/lilapp/cards";
-import { NotesList, Quiet, SelectBox } from "@/components/lilapp/ui";
+import { Quiet, SelectBox } from "@/components/lilapp/ui";
 import {
   buildDayItems,
   isItemPast,
@@ -20,17 +22,9 @@ import {
   scheduleDays,
   type DayItem,
 } from "@/lib/schedule";
-import {
-  formatDayLabel,
-  formatDayLong,
-  formatDayPlain,
-  nowInVenice,
-  relativeUntil,
-  TIME_LABEL,
-} from "@/lib/time";
+import { formatDayLabel, formatDayLong, nowInVenice, relativeUntil, TIME_LABEL } from "@/lib/time";
 import { tripQueryOptions } from "@/lib/trip";
 import { useDisplayName } from "@/lib/use-display-name";
-import { amenitiesForDay } from "@/lib/briefing";
 import { activityVips, teamNames } from "@/lib/people";
 import type { ActivityRow, TripData } from "@/lib/airtable.server";
 
@@ -205,25 +199,11 @@ function FullSchedule({
                   cardRef={item.key === currentKey ? currentRef : undefined}
                 />
               ))}
-              <DayAmenities
-                lines={amenitiesForDay(data.briefing, formatDayPlain(d).split(",")[0] ?? "")}
-              />
             </div>
           </section>
         ))
       )}
     </>
-  );
-}
-
-/** End of the day: that day's amenities from the Briefing "Amenities" row. */
-function DayAmenities({ lines }: { lines: string[] }) {
-  if (lines.length === 0) return null;
-  return (
-    <section className="rounded-[13px] border border-border px-4 py-3">
-      <h3 className="label-caps mb-1">Amenities</h3>
-      <NotesList notes={lines.join("\n")} />
-    </section>
   );
 }
 
@@ -245,6 +225,8 @@ function ScheduleItem({
 }) {
   const past = isItemPast(item);
   if (item.kind === "decor") return <DecorCard row={item.row} past={past} cardRef={cardRef} />;
+  if (item.kind === "event" && isAmenityRow(item.row))
+    return <AmenityCard row={item.row} cardRef={cardRef} />;
   if (item.kind === "activities")
     return <ActivitiesGroupCard activities={item.activities} past={past} cardRef={cardRef} />;
   return (

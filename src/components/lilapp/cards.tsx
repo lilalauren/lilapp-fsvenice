@@ -355,6 +355,27 @@ export function DecorCard({
   );
 }
 
+/** "Amenities" rows (one at the end of each day in Airtable): a card that's hard to miss. */
+export function isAmenityRow(row: Pick<ScheduleRow, "type" | "eventName">): boolean {
+  return normalizeName(row.type) === "amenities";
+}
+
+export function AmenityCard({ row, cardRef }: { row: ScheduleRow; cardRef?: Ref<HTMLElement> }) {
+  const lines = [row.photographyRequests, row.notes].filter(Boolean).join("\n");
+  return (
+    <article
+      ref={cardRef}
+      className="scroll-mt-44 rounded-[13px] border-2 border-primary bg-sage-card p-4"
+    >
+      <h3 className="text-[15px] font-bold tracking-[0.12em] text-foreground uppercase">
+        Amenities
+      </h3>
+      <Photographers names={row.photographers} />
+      {lines ? <NotesList notes={lines} className="mt-2" /> : null}
+    </article>
+  );
+}
+
 const covering = (a: ActivityRow) => normalizeName(a.lilaCovering) === "yes";
 
 /** Sabbatical's sage card for each activity: time, name, who runs it; tap for the rest. */

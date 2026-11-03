@@ -36,19 +36,3 @@ export function guestCounts(rows: BriefingRow[]): Array<{ label: string; value: 
     .filter((m): m is RegExpMatchArray => Boolean(m))
     .map((m) => ({ label: m[1]!.trim(), value: m[2]!.trim() }));
 }
-
-/**
- * That day's lines from the Briefing "Amenities" row, matched by weekday
- * ("Thursday PM amenity: …" → Thursday), with the weekday dropped.
- */
-export function amenitiesForDay(rows: BriefingRow[], weekday: string): string[] {
-  const row = findSection(rows, "amenities");
-  const day = normalizeName(weekday);
-  if (!row || !day) return [];
-  return row.content
-    .split(/\r?\n/)
-    .map((l) => l.replace(/^[-–—•*·]+\s*/, "").trim())
-    .filter((l) => normalizeName(l).startsWith(day))
-    .map((l) => l.slice(day.length).trim())
-    .map((l) => l.charAt(0).toUpperCase() + l.slice(1));
-}
