@@ -2,7 +2,7 @@
    Network-first for pages and assets, with a cache fallback so the team can
    still open the app and read cached trip info without a connection. */
 
-const CACHE = "lilapp-venice-v1";
+const CACHE = "lilapp-venice-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
