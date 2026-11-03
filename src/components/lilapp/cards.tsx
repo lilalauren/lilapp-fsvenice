@@ -10,8 +10,8 @@ import { scheduleImages, type VeniceImage } from "@/lib/venice-images";
 import { Block, Field, ImageViewer, NotesList } from "./ui";
 
 /**
- * Sabbatical's time column: "Call | 6:15 pm" stacked over "Event | 7–10 pm".
- * A long range only wraps after the dash when it has to.
+ * Sabbatical's times: "Call | 6:15 pm" stacked over "Event | 7–10 pm", at the top
+ * of the card; everything else sits underneath, left-aligned, full width.
  */
 function TimeColumn({
   call,
@@ -22,12 +22,12 @@ function TimeColumn({
   event?: string;
   callLabel?: string;
 }) {
-  if (!call && !event) return <div className="w-[6.75rem] shrink-0" />;
+  if (!call && !event) return null;
   const line = (label: string, value: string) => {
     const [from, to] = value.split("–");
     return (
       <div className="flex items-baseline gap-1.5">
-        <span className="w-8 shrink-0 text-right text-[11px] text-subtle">{label}</span>
+        <span className="w-10 shrink-0 text-[11px] text-subtle">{label}</span>
         <span className="h-3 w-px shrink-0 self-center bg-border" />
         <span className="text-[14px] leading-tight font-semibold text-foreground tabular-nums">
           <span className="whitespace-nowrap">
@@ -45,7 +45,7 @@ function TimeColumn({
     );
   };
   return (
-    <div className="w-[6.75rem] shrink-0 space-y-1.5 pt-0.5 select-none">
+    <div className="space-y-1 select-none">
       {call ? line(callLabel, call) : null}
       {event ? line("Event", event) : null}
     </div>
@@ -231,28 +231,30 @@ export function EventCard({
         aria-expanded={open}
         className="flex w-full items-start gap-3 p-4 text-left"
       >
-        <TimeColumn call={callText} event={shortRange(row.startTime, row.endTime)} />
-        <div className="min-w-0 flex-1">
-          {setup || row.rush ? (
-            <p className="ui-label mb-0.5 text-[11px]">
-              {setup ? "Setup" : null}
-              {setup && row.rush ? " · " : null}
-              {row.rush ? <span className="text-destructive">Rush</span> : null}
-            </p>
-          ) : null}
-          <h3 className="text-[17px] leading-snug font-semibold text-foreground">
-            {row.eventName || "Untitled"}
-          </h3>
-          {row.venue ? (
-            <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">{row.venue}</p>
-          ) : null}
-          <Photographers names={row.photographers} />
-          {row.vipFocus ? (
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              <span className="label-caps mr-1">VIP</span>
-              {row.vipFocus}
-            </p>
-          ) : null}
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <TimeColumn call={callText} event={shortRange(row.startTime, row.endTime)} />
+          <div>
+            {setup || row.rush ? (
+              <p className="ui-label mb-0.5 text-[11px]">
+                {setup ? "Setup" : null}
+                {setup && row.rush ? " · " : null}
+                {row.rush ? <span className="text-destructive">Rush</span> : null}
+              </p>
+            ) : null}
+            <h3 className="text-[17px] leading-snug font-semibold text-foreground">
+              {row.eventName || "Untitled"}
+            </h3>
+            {row.venue ? (
+              <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">{row.venue}</p>
+            ) : null}
+            <Photographers names={row.photographers} />
+            {row.vipFocus ? (
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                <span className="label-caps mr-1">VIP</span>
+                {row.vipFocus}
+              </p>
+            ) : null}
+          </div>
         </div>
         {hasDetails ? <Chevron open={open} /> : null}
       </button>
@@ -327,18 +329,20 @@ export function DecorCard({
         aria-expanded={open}
         className="flex w-full items-start gap-3 p-4 text-left"
       >
-        <TimeColumn call={isTime ? time : "TBD"} callLabel="Décor" />
-        <div className="min-w-0 flex-1">
-          <p className="ui-label mb-0.5 text-[11px]">Décor shoot</p>
-          <h3 className="text-[17px] leading-snug font-semibold text-foreground">
-            {row.eventName}
-          </h3>
-          {!isTime && row.decorAdvance ? (
-            <p className="mt-0.5 text-[14px] leading-snug text-muted-foreground">
-              {row.decorAdvance}
-            </p>
-          ) : null}
-          <Photographers names={row.photographers} />
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <TimeColumn call={isTime ? time : "TBD"} callLabel="Décor" />
+          <div>
+            <p className="ui-label mb-0.5 text-[11px]">Décor shoot</p>
+            <h3 className="text-[17px] leading-snug font-semibold text-foreground">
+              {row.eventName}
+            </h3>
+            {!isTime && row.decorAdvance ? (
+              <p className="mt-0.5 text-[14px] leading-snug text-muted-foreground">
+                {row.decorAdvance}
+              </p>
+            ) : null}
+            <Photographers names={row.photographers} />
+          </div>
         </div>
         {row.decorToShoot ? <Chevron open={open} /> : null}
       </button>
@@ -382,20 +386,22 @@ export function ActivityCard({
         aria-expanded={open}
         className="flex w-full items-start gap-3 p-4 text-left"
       >
-        <TimeColumn event={shortRange(a.start, a.end)} />
-        <div className="min-w-0 flex-1">
-          {covering(a) ? <p className="ui-label mb-0.5 text-[11px]">LILA covering</p> : null}
-          <h3 className="text-[17px] leading-snug font-semibold text-foreground">{a.activity}</h3>
-          {a.runBy ? (
-            <p className="mt-0.5 text-[15px] leading-snug text-foreground/75">{a.runBy}</p>
-          ) : null}
-          <Photographers names={a.photographer ? [a.photographer] : []} />
-          {vips ? (
-            <p className="mt-1 text-[13px] text-foreground/75">
-              <span className="label-caps mr-1">VIP</span>
-              {vips}
-            </p>
-          ) : null}
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <TimeColumn event={shortRange(a.start, a.end)} />
+          <div>
+            {covering(a) ? <p className="ui-label mb-0.5 text-[11px]">LILA covering</p> : null}
+            <h3 className="text-[17px] leading-snug font-semibold text-foreground">{a.activity}</h3>
+            {a.runBy ? (
+              <p className="mt-0.5 text-[15px] leading-snug text-foreground/75">{a.runBy}</p>
+            ) : null}
+            <Photographers names={a.photographer ? [a.photographer] : []} />
+            {vips ? (
+              <p className="mt-1 text-[13px] text-foreground/75">
+                <span className="label-caps mr-1">VIP</span>
+                {vips}
+              </p>
+            ) : null}
+          </div>
         </div>
         <Chevron open={open} />
       </button>
@@ -442,18 +448,20 @@ export function ActivitiesGroupCard({
         aria-expanded={open}
         className="flex w-full items-start gap-3 p-4 text-left"
       >
-        <TimeColumn event={shortRange(first, last)} />
-        <div className="min-w-0 flex-1">
-          <span className="inline-block rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary-foreground uppercase">
-            Activities
-          </span>
-          <h3 className="mt-1 text-[17px] leading-snug font-semibold text-foreground">
-            {activities.length} {activities.length === 1 ? "activity" : "activities"}
-            {covered ? ` · LILA covering ${covered}` : ""}
-          </h3>
-          <p className="mt-0.5 text-sm text-foreground/75 italic">
-            tap for breakdown of activities
-          </p>
+        <div className="min-w-0 flex-1 space-y-2.5">
+          <TimeColumn event={shortRange(first, last)} />
+          <div>
+            <span className="inline-block rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold tracking-wide text-primary-foreground uppercase">
+              Activities
+            </span>
+            <h3 className="mt-1 text-[17px] leading-snug font-semibold text-foreground">
+              {activities.length} {activities.length === 1 ? "activity" : "activities"}
+              {covered ? ` · LILA covering ${covered}` : ""}
+            </h3>
+            <p className="mt-0.5 text-sm text-foreground/75 italic">
+              tap for breakdown of activities
+            </p>
+          </div>
         </div>
         <Chevron open={open} />
       </button>
