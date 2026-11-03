@@ -20,8 +20,8 @@ export const TABLES = {
 
 export type TableKey = keyof typeof TABLES;
 
-// Grid views whose sort the app keeps (Schedule: Date, then Sort Time).
-const VIEWS: Partial<Record<TableKey, string>> = { SCHEDULE: "viw3NK9SzC1MHVStn" };
+// No Airtable view is used: filtering a view in Airtable (e.g. to one day) must never
+// hide rows in the app. The app sorts by Date, then Sort Time, on its own.
 
 export type Attachment = {
   url: string;
@@ -228,7 +228,7 @@ export type TripData = {
  */
 async function listSafe(key: TableKey): Promise<{ key: TableKey; rows: AirtableRecord[] | null }> {
   try {
-    return { key, rows: await listAll(TABLES[key], VIEWS[key]) };
+    return { key, rows: await listAll(TABLES[key]) };
   } catch (error) {
     console.error(`Airtable table ${key} failed to load; continuing without it.`, error);
     return { key, rows: null };
