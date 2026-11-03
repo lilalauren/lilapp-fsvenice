@@ -192,6 +192,14 @@ export function EventCard({
   const plans = images.filter(isPlan);
   const decor = images.filter((i) => !isPlan(i));
   const callText = shortTime(row.callTime);
+  // Repeat the call time in the details only when it carries a note, e.g. "(team leaves the Danieli)".
+  const callNote = /[a-z]{3,}/i.test(row.callTime.replace(/\b[ap]\.?m\.?\b/gi, ""));
+  // Activity notes, minus lines the card already shows (photographer, VIPs).
+  const activityNotes = (activity?.notes ?? "")
+    .split(/\r?\n/)
+    .filter((l) => !/^[-–—•*·\s]*(photographers?|vips?)\s*:/i.test(l))
+    .join("\n")
+    .trim();
   // Décor to Shoot lives on the separate Décor card when the event has one.
   const decorCardShown = hasDecorCard(row);
   const hasDetails = Boolean(
@@ -201,8 +209,8 @@ export function EventCard({
     row.photographyRequests ||
     (row.decorToShoot && !decorCardShown) ||
     activity?.meetingPoint ||
-    activity?.notes ||
-    callText !== row.callTime,
+    activityNotes ||
+    callNote,
   );
 
   if (past && !shown) {
@@ -262,7 +270,7 @@ export function EventCard({
       {open ? (
         <div className="space-y-3 border-t border-border px-4 pt-3 pb-4">
           {/* 1. Where to be */}
-          {callText !== row.callTime ? <Field label="Call" value={row.callTime} /> : null}
+          {callNote ? <Field label="Call" value={row.callTime} /> : null}
           {row.departureSpot || row.boatTransfer || activity?.meetingPoint ? (
             <div className="space-y-0.5">
               <Field label="Meet at" value={activity?.meetingPoint} />
@@ -275,7 +283,7 @@ export function EventCard({
           {decorCardShown ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
           {/* 3. Briefing */}
           <Block label="Briefing" text={row.notes} />
-          {activity?.notes ? <Block label="Activity notes" text={activity.notes} /> : null}
+          <Block label="Activity notes" text={activityNotes} />
           {past ? (
             <button
               type="button"
