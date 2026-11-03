@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { ChevronRight, Map } from "lucide-react";
 
 import type { ActivityRow, ScheduleRow } from "@/lib/airtable.server";
-import { normalizeName } from "@/lib/schedule";
+import { hasDecorCard, normalizeName } from "@/lib/schedule";
 import { parseTimeToMinutes, shortRange, shortTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { scheduleImages, type VeniceImage } from "@/lib/venice-images";
@@ -192,14 +192,16 @@ export function EventCard({
   const plans = images.filter(isPlan);
   const decor = images.filter((i) => !isPlan(i));
   const callText = shortTime(row.callTime);
+  // Décor to Shoot lives on the separate Décor card when the event has one.
+  const decorCardShown = hasDecorCard(row);
   const hasDetails = Boolean(
     row.boatTransfer ||
     row.departureSpot ||
-    row.dressCode ||
     row.notes ||
     row.photographyRequests ||
-    row.decorToShoot ||
-    activity ||
+    (row.decorToShoot && !decorCardShown) ||
+    activity?.meetingPoint ||
+    activity?.notes ||
     callText !== row.callTime,
   );
 
@@ -257,18 +259,21 @@ export function EventCard({
       <MediaButtons decor={decor} plans={plans} />
       {open ? (
         <div className="space-y-3 border-t border-border px-4 pt-3 pb-4">
+          {/* 1. Where to be */}
           {callText !== row.callTime ? <Field label="Call" value={row.callTime} /> : null}
-          {row.boatTransfer || row.departureSpot ? (
+          {row.departureSpot || row.boatTransfer || activity?.meetingPoint ? (
             <div className="space-y-0.5">
-              <Field label="Boat Transfer" value={row.boatTransfer} />
-              <Field label="Departure Spot" value={row.departureSpot} />
+              <Field label="Meet at" value={activity?.meetingPoint} />
+              <Field label="Departs from" value={row.departureSpot} />
+              <Field label="Boat" value={row.boatTransfer} />
             </div>
           ) : null}
-          <Field label="Dress Code" value={row.dressCode} />
-          <Block label="Briefing" text={row.notes} />
+          {/* 2. What to photograph */}
           <Block label="Coverage Requirements" text={row.photographyRequests} />
-          <Block label="Décor to Shoot" text={row.decorToShoot} />
-          {activity ? <ActivityFacts activity={activity} /> : null}
+          {decorCardShown ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
+          {/* 3. Briefing */}
+          <Block label="Briefing" text={row.notes} />
+          {activity?.notes ? <Block label="Activity notes" text={activity.notes} /> : null}
           {past ? (
             <button
               type="button"
@@ -284,7 +289,10 @@ export function EventCard({
   );
 }
 
-/** A Décor Advance becomes its own muted SETUP card ahead of the event. */
+/**
+ * The Décor line ahead of a main event: when to get in, which event, who shoots it,
+ * and (on tap) the Décor to Shoot list.
+ */
 export function DecorCard({
   row,
   past,
@@ -295,52 +303,51 @@ export function DecorCard({
   cardRef?: Ref<HTMLElement>;
 }) {
   const [shown, setShown] = usePastToggle(past);
+  const [open, setOpen] = useState(false);
   if (past && !shown) {
     return (
       <PastLine
         cardRef={cardRef}
-        time="Setup"
+        time="Décor"
         title={row.eventName}
         onOpen={() => setShown(true)}
       />
     );
   }
   const time = shortTime(row.decorAdvance);
+  const isTime = parseTimeToMinutes(row.decorAdvance) !== null && time.length <= 9;
   return (
     <article
       ref={cardRef}
       className={cn("card scroll-mt-44 border-l-4 border-l-sage-line", past && "opacity-60")}
     >
-      <div className="flex items-start gap-3 p-4">
-        <TimeColumn call={time.length <= 9 ? time : "See note"} callLabel="Décor" />
+      <button
+        type="button"
+        onClick={() => row.decorToShoot && setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-start gap-3 p-4 text-left"
+      >
+        <TimeColumn call={isTime ? time : "TBD"} callLabel="Décor" />
         <div className="min-w-0 flex-1">
-          <p className="ui-label mb-0.5 text-[11px]">Setup</p>
+          <p className="ui-label mb-0.5 text-[11px]">Décor shoot</p>
           <h3 className="text-[17px] leading-snug font-semibold text-foreground">
             {row.eventName}
           </h3>
-          <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">
-            Décor Advance: {row.decorAdvance}
-          </p>
+          {!isTime && row.decorAdvance ? (
+            <p className="mt-0.5 text-[14px] leading-snug text-muted-foreground">
+              {row.decorAdvance}
+            </p>
+          ) : null}
+          <Photographers names={row.photographers} />
         </div>
-      </div>
-    </article>
-  );
-}
-
-function ActivityFacts({ activity: a }: { activity: ActivityRow }) {
-  return (
-    <div className="space-y-0.5">
-      <Field label="Run by" value={a.runBy} />
-      <Field label="Meeting point" value={a.meetingPoint} />
-      <Field label="Getting there" value={a.gettingThere} />
-      <Field label="Signed up" value={a.signedUp != null ? String(a.signedUp) : ""} />
-      <Field label="LILA covering" value={a.lilaCovering} />
-      {a.notes ? (
-        <div className="pt-2">
-          <Block label="Activities notes" text={a.notes} />
+        {row.decorToShoot ? <Chevron open={open} /> : null}
+      </button>
+      {open ? (
+        <div className="border-t border-border px-4 pt-3 pb-4">
+          <Block label="Décor to Shoot" text={row.decorToShoot} />
         </div>
       ) : null}
-    </div>
+    </article>
   );
 }
 

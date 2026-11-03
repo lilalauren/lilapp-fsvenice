@@ -77,6 +77,16 @@ export function sortActivities(activities: ActivityRow[]): ActivityRow[] {
   );
 }
 
+// Décor shoots happen before the main events, never before activities or transfers.
+const NO_DECOR_TYPES = ["activity", "transfer", "arrival", "departure", "wellness"];
+
+/** A main event with a Décor Advance gets its own Décor line just before it. */
+export function hasDecorCard(row: ScheduleRow): boolean {
+  return Boolean(
+    row.decorAdvance && !isSetupRow(row) && !NO_DECOR_TYPES.includes(normalizeName(row.type)),
+  );
+}
+
 export type DayItem =
   | { kind: "event"; key: string; row: ScheduleRow; setup: boolean }
   | { kind: "decor"; key: string; row: ScheduleRow }
@@ -84,7 +94,7 @@ export type DayItem =
 
 /**
  * One day's run of show:
- * - every row with a Décor Advance gets its own SETUP line just ahead of it;
+ * - every main event with a Décor Advance gets its own Décor line just ahead of it;
  * - optionally, the Activities table as one group card where Saturday's activities start.
  */
 export function buildDayItems(
@@ -121,7 +131,7 @@ export function buildDayItems(
       });
       activitiesPlaced = true;
     }
-    if (row.decorAdvance) items.push({ kind: "decor", key: `decor-${row.id}`, row });
+    if (hasDecorCard(row)) items.push({ kind: "decor", key: `decor-${row.id}`, row });
     items.push({ kind: "event", key: row.id, row, setup: isSetupRow(row) });
   }
   if (!activitiesPlaced && activityAnchor && myActivities.length > 0) {

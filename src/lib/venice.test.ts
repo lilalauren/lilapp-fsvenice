@@ -105,6 +105,21 @@ describe("Schedule rules", () => {
     );
   });
 
+  it("adds Décor lines only before main events, not activities or transfers", () => {
+    const items = buildDayItems(
+      [
+        row({ id: "a", type: "Activity", sortTime: "09:30", decorAdvance: "9:00 AM" }),
+        row({ id: "t", type: "Transfer", sortTime: "18:30", decorAdvance: "TBD" }),
+        row({ id: "g", type: "Evening Event", sortTime: "20:00", decorAdvance: "6:00 PM" }),
+      ],
+      [],
+    );
+    assert.deepEqual(
+      items.map((i) => i.key),
+      ["a", "t", "decor-g", "g"],
+    );
+  });
+
   it("filters to one team member by exact name", () => {
     assert.equal(isAssigned(["Lauren", "Gonzalo"], "lauren"), true);
     assert.equal(isAssigned(["Joanna"], "Ann"), false);
