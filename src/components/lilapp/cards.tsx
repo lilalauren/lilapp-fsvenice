@@ -194,12 +194,6 @@ export function EventCard({
   const callText = shortTime(row.callTime);
   // Repeat the call time in the details only when it carries a note, e.g. "(team leaves the Danieli)".
   const callNote = /[a-z]{3,}/i.test(row.callTime.replace(/\b[ap]\.?m\.?\b/gi, ""));
-  // Activity notes, minus lines the card already shows (photographer, VIPs).
-  const activityNotes = (activity?.notes ?? "")
-    .split(/\r?\n/)
-    .filter((l) => !/^[-–—•*·\s]*(photographers?|vips?)\s*:/i.test(l))
-    .join("\n")
-    .trim();
   // Décor to Shoot lives on the separate Décor card when the event has one.
   const decorCardShown = hasDecorCard(row);
   const hasDetails = Boolean(
@@ -209,7 +203,6 @@ export function EventCard({
     row.photographyRequests ||
     (row.decorToShoot && !decorCardShown) ||
     activity?.meetingPoint ||
-    activityNotes ||
     callNote,
   );
 
@@ -283,7 +276,6 @@ export function EventCard({
           {decorCardShown ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
           {/* 3. Briefing */}
           <Block label="Briefing" text={row.notes} />
-          <Block label="Activity notes" text={activityNotes} />
           {past ? (
             <button
               type="button"
