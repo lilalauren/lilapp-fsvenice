@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, FileText, Map } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Map } from "lucide-react";
 
 import type { ActivityRow, ScheduleRow } from "@/lib/airtable.server";
 import { hasDecorCard, normalizeName } from "@/lib/schedule";
@@ -132,9 +132,9 @@ function MediaButtons({
   const [beoOpen, setBeoOpen] = useState(false);
   if (decor.length === 0 && plans.length === 0 && !beo && !left) return null;
   const pill =
-    "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-secondary pr-3 pl-1.5 text-[13px] font-semibold whitespace-nowrap text-primary";
+    "inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full bg-secondary pr-2.5 pl-1 text-[12.5px] font-semibold whitespace-nowrap text-primary";
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 px-4 pb-3">
+    <div className="flex flex-wrap items-center justify-end gap-1.5 px-4 pb-3">
       <div className="mr-auto">{left}</div>
       {decor.length ? (
         <button
@@ -161,9 +161,9 @@ function MediaButtons({
             e.stopPropagation();
             setOpen(plans);
           }}
-          className={cn(pill, "pl-3")}
+          className={cn(pill, "pl-2.5")}
         >
-          <Map className="size-4" aria-hidden />
+          <Map className="size-3.5" aria-hidden />
           {plans.length > 1 ? `Layout · ${plans.length}` : "Layout"}
         </button>
       ) : null}
@@ -175,9 +175,9 @@ function MediaButtons({
             setBeoOpen(true);
           }}
           aria-label={`Open BEO ${beo.number}: ${beo.title}`}
-          className={cn(pill, "pl-3")}
+          className={cn(pill, "pl-2.5")}
         >
-          <FileText className="size-4" aria-hidden />
+          <FileText className="size-3.5" aria-hidden />
           BEO
         </button>
       ) : null}
@@ -297,9 +297,24 @@ export function EventCard({
             ) : null}
           </div>
         </div>
-        {hasDetails ? <Chevron open={open} /> : null}
       </button>
       <MediaButtons decor={decor} plans={plans} beo={scheduleBeo(row.eventName)} />
+      {/* Panattoni's centred chevron at the bottom of the card opens the details. */}
+      {hasDetails ? (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={open ? "Hide details" : "Show details"}
+          className="flex min-h-9 w-full items-start justify-center pb-2 text-primary/80"
+        >
+          <ChevronDown
+            aria-hidden
+            className={cn("size-6 transition-transform", open && "rotate-180")}
+            strokeWidth={2}
+          />
+        </button>
+      ) : null}
       {open ? (
         <div className="space-y-5 border-t border-border px-4 pt-3 pb-4">
           {/* 1. Where to be */}

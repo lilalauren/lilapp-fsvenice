@@ -77,17 +77,23 @@ function PdfPages({ url }: { url: string }) {
         const task = pdfjs.getDocument({ url, isEvalSupported: false });
         destroy = () => void task.destroy();
         const pdf = await task.promise;
-        const width = el.clientWidth;
+        // Show each whole page: as wide as the screen, but never taller than the viewer.
+        const box = el.parentElement ?? el;
         const ratio = Math.min(window.devicePixelRatio || 1, 3);
         for (let n = 1; n <= pdf.numPages; n++) {
           if (disposed) return;
           const page = await pdf.getPage(n);
           const base = page.getViewport({ scale: 1 });
+          const width = Math.min(
+            el.clientWidth,
+            (box.clientHeight - 16) * (base.width / base.height),
+          );
           const viewport = page.getViewport({ scale: (width / base.width) * ratio });
           const canvas = document.createElement("canvas");
           canvas.width = Math.ceil(viewport.width);
           canvas.height = Math.ceil(viewport.height);
           canvas.className = "pdf-page";
+          canvas.style.width = `${Math.floor(width)}px`;
           canvas.setAttribute("role", "img");
           canvas.setAttribute("aria-label", `Page ${n} of ${pdf.numPages}`);
           el.append(canvas);
