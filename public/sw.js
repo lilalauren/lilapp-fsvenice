@@ -2,7 +2,7 @@
    Network-first for pages and assets, with a cache fallback so the team can
    still open the app and read cached trip info without a connection. */
 
-const CACHE = "lilapp-venice-v2";
+const CACHE = "lilapp-venice-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -54,7 +54,7 @@ self.addEventListener("fetch", (event) => {
   const isAsset =
     url.pathname.startsWith("/_build/") ||
     url.pathname.startsWith("/assets/") ||
-    /\.(js|css|woff2?|png|jpg|jpeg|svg|ico|webp)$/.test(url.pathname);
+    /\.(js|mjs|css|woff2?|png|jpg|jpeg|svg|ico|webp|pdf)$/.test(url.pathname);
 
   if (isAsset) {
     event.respondWith(networkFirst(request, false));

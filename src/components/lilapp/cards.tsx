@@ -1,12 +1,14 @@
 import { useEffect, useState, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Map } from "lucide-react";
+import { ChevronRight, FileText, Map } from "lucide-react";
 
 import type { ActivityRow, ScheduleRow } from "@/lib/airtable.server";
 import { hasDecorCard, normalizeName } from "@/lib/schedule";
 import { parseTimeToMinutes, shortRange, shortTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { scheduleBeo, type Beo } from "@/lib/venice-beos";
 import { scheduleImages, type VeniceImage } from "@/lib/venice-images";
+import { PdfViewer } from "./PdfViewer";
 import { Block, Field, ImageViewer, NotesList } from "./ui";
 
 /**
@@ -113,13 +115,27 @@ function Chevron({ open }: { open: boolean }) {
  * Small pills at the card's bottom right: the deck's décor renders and its floor plans.
  * Each opens the full-screen viewer, fitted to the phone's width.
  */
-function MediaButtons({ decor, plans }: { decor: VeniceImage[]; plans: VeniceImage[] }) {
+function MediaButtons({
+  decor,
+  plans,
+  beo,
+  left,
+}: {
+  decor: VeniceImage[];
+  plans: VeniceImage[];
+  /** The Danieli BEO for this event, opened in the PDF viewer. */
+  beo?: Beo;
+  /** Shown at the left of the same row, e.g. the Details toggle. */
+  left?: ReactNode;
+}) {
   const [open, setOpen] = useState<VeniceImage[] | null>(null);
-  if (decor.length === 0 && plans.length === 0) return null;
+  const [beoOpen, setBeoOpen] = useState(false);
+  if (decor.length === 0 && plans.length === 0 && !beo && !left) return null;
   const pill =
-    "inline-flex min-h-9 items-center gap-1.5 rounded-full bg-secondary pr-3 pl-1.5 text-[13px] font-semibold text-primary";
+    "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-secondary pr-3 pl-1.5 text-[13px] font-semibold whitespace-nowrap text-primary";
   return (
-    <div className="flex justify-end gap-2 px-4 pb-3">
+    <div className="flex flex-wrap items-center justify-end gap-2 px-4 pb-3">
+      <div className="mr-auto">{left}</div>
       {decor.length ? (
         <button
           type="button"
@@ -151,8 +167,32 @@ function MediaButtons({ decor, plans }: { decor: VeniceImage[]; plans: VeniceIma
           {plans.length > 1 ? `Layout · ${plans.length}` : "Layout"}
         </button>
       ) : null}
+      {beo ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setBeoOpen(true);
+          }}
+          aria-label={`Open BEO ${beo.number}: ${beo.title}`}
+          className={cn(pill, "pl-3")}
+        >
+          <FileText className="size-4" aria-hidden />
+          BEO
+        </button>
+      ) : null}
       {open
         ? createPortal(<ImageViewer images={open} onClose={() => setOpen(null)} />, document.body)
+        : null}
+      {beo && beoOpen
+        ? createPortal(
+            <PdfViewer
+              url={beo.src}
+              caption={`BEO #${beo.number} · ${beo.title}`}
+              onClose={() => setBeoOpen(false)}
+            />,
+            document.body,
+          )
         : null}
     </div>
   );
@@ -259,7 +299,7 @@ export function EventCard({
         </div>
         {hasDetails ? <Chevron open={open} /> : null}
       </button>
-      <MediaButtons decor={decor} plans={plans} />
+      <MediaButtons decor={decor} plans={plans} beo={scheduleBeo(row.eventName)} />
       {open ? (
         <div className="space-y-5 border-t border-border px-4 pt-3 pb-4">
           {/* 1. Where to be */}

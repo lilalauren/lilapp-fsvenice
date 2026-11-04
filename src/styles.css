@@ -228,6 +228,36 @@ body {
   user-select: none;
   -webkit-user-drag: none;
 }
+/* BEO PDFs: normal scrolling inside the viewer (no custom pinch surface). */
+.viewer.viewer-doc {
+  touch-action: pan-y;
+}
+.pdf-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0 10px 10px;
+}
+.pdf-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pdf-page {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border-radius: 4px;
+}
+.pdf-status {
+  padding: 24px 8px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #c7d0c7;
+}
 .viewer-footer {
   flex-shrink: 0;
   text-align: center;

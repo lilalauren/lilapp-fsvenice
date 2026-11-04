@@ -1,4 +1,5 @@
 import { describe, it } from "node:test";
+import { scheduleBeo } from "./venice-beos";
 import assert from "node:assert/strict";
 
 import type { ActivityRow, ScheduleRow, TripData } from "./airtable.server";
@@ -307,5 +308,22 @@ describe("Deck and Lookbook images", () => {
     assert.equal(scheduleImages("Cocktail Reception")[1]?.caption, "Floor plan · cocktail");
     assert.equal(scheduleImages("1:1 Appointments").length, 0);
     assert.equal(lookbookImages("Activities: Unlock Venice")[0]?.caption, "Lookbook");
+  });
+});
+
+describe("BEOs", () => {
+  it("matches each BEO to its events by name", () => {
+    assert.equal(
+      scheduleBeo("Hospitality Lounge & Gifting Experience, Giving Corner")?.number,
+      "1",
+    );
+    assert.equal(scheduleBeo("Welcome Reception")?.number, "2");
+    assert.match(
+      scheduleBeo("Lunch – A Venetian Rhythm (market style)")?.src ?? "",
+      /misericordia/,
+    );
+    assert.match(scheduleBeo("Brunch – Terrazza Danieli")?.src ?? "", /brunch/);
+    assert.equal(scheduleBeo("Cocktail Reception")?.number, "5");
+    assert.equal(scheduleBeo("Welcome Speeches"), undefined);
   });
 });
