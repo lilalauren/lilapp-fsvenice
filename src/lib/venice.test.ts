@@ -28,6 +28,7 @@ const row = (over: Partial<ScheduleRow>): ScheduleRow => ({
   startTime: "",
   endTime: "",
   sortTime: "",
+  sortHint: "",
   type: "",
   venue: "",
   boatTransfer: "",
@@ -325,5 +326,21 @@ describe("BEOs", () => {
     assert.match(scheduleBeo("Brunch – Terrazza Danieli")?.src ?? "", /brunch/);
     assert.equal(scheduleBeo("Cocktail Reception")?.number, "5");
     assert.equal(scheduleBeo("Welcome Speeches"), undefined);
+  });
+});
+
+describe("same-time events", () => {
+  it("uses Sort Time - hidden to order events that start together", () => {
+    const items = buildDayItems(
+      [
+        row({ id: "flavours", sortTime: "09:00", sortHint: "09:05" }),
+        row({ id: "fortuny", sortTime: "09:00", sortHint: "08:55" }),
+      ],
+      [],
+    );
+    assert.deepEqual(
+      items.map((i) => i.key),
+      ["fortuny", "flavours"],
+    );
   });
 });

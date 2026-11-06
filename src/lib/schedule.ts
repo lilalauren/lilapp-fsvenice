@@ -35,6 +35,8 @@ export function sortSchedule(rows: ScheduleRow[]): ScheduleRow[] {
       (a, b) =>
         a.row.date.localeCompare(b.row.date) ||
         sortMinutes(a.row) - sortMinutes(b.row) ||
+        // Same start time: "Sort Time - hidden" decides (e.g. 08:55 before 09:05).
+        (parseTimeToMinutes(a.row.sortHint) ?? 0) - (parseTimeToMinutes(b.row.sortHint) ?? 0) ||
         a.i - b.i,
     )
     .map((x) => x.row);

@@ -117,6 +117,8 @@ export type ScheduleRow = {
   startTime: string;
   endTime: string;
   sortTime: string;
+  /** "Sort Time - hidden": breaks ties between events that start at the same time. */
+  sortHint: string;
   type: string;
   venue: string;
   boatTransfer: string;
@@ -264,6 +266,7 @@ export function tripFromRecords(raw: Partial<Record<TableKey, AirtableRecord[] |
       startTime: str(f["Start Time"]),
       endTime: str(f["End Time"]),
       sortTime: str(f["Sort Time"] ?? f["Sort Time - hidden"]),
+      sortHint: str(f["Sort Time - hidden"]),
       type: str(f["Type"]),
       venue: str(f["Venue"]),
       boatTransfer: str(f["Boat Transfer"]),
