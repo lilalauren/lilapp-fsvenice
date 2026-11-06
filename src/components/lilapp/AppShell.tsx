@@ -80,19 +80,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             </a>
           ) : null}
           <UpdatesBell />
-          <Link
-            to="/questions"
-            aria-label="Pending Questions"
-            title="Pending Questions"
-            className={`${roundButton} relative`}
-          >
-            <CircleHelp className="size-5" />
-            {pending ? (
-              <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
-                {pending}
-              </span>
-            ) : null}
-          </Link>
+          {/* Only shown while a question is still open in Airtable. */}
+          {pending ? (
+            <Link
+              to="/questions"
+              aria-label="Pending Questions"
+              title="Pending Questions"
+              className={`${roundButton} relative`}
+            >
+              <CircleHelp className="size-5" />
+              {pending ? (
+                <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+                  {pending}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </div>
         <OfflineBanner />
       </header>
