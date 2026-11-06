@@ -7,7 +7,14 @@ import { tripFromRecords } from "./airtable.server";
 import { mergeWithCache } from "./offline";
 import { peopleInGroup } from "./people";
 import { resumePhoto } from "./resume-photos";
-import { buildDayItems, isAssigned, isSetupRow, matchActivity, sortActivities } from "./schedule";
+import {
+  buildDayItems,
+  isAssigned,
+  isSetupRow,
+  matchActivity,
+  scheduleRowForActivity,
+  sortActivities,
+} from "./schedule";
 import {
   formatDayLabel,
   formatDayLong,
@@ -342,5 +349,14 @@ describe("same-time events", () => {
       items.map((i) => i.key),
       ["fortuny", "flavours"],
     );
+  });
+});
+
+describe("activity call times", () => {
+  it("finds the Schedule row (and its call time) for an activity", () => {
+    const murano = activity({ id: "m", activity: "A Window Into Murano" });
+    const rows = [row({ id: "s", eventName: "A Window Into Murano", callTime: "8:45 AM" })];
+    assert.equal(scheduleRowForActivity(murano, rows)?.callTime, "8:45 AM");
+    assert.equal(scheduleRowForActivity(activity({ activity: "Reel Venice" }), rows), undefined);
   });
 });

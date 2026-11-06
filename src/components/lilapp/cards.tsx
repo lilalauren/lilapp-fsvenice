@@ -436,11 +436,14 @@ const covering = (a: ActivityRow) => normalizeName(a.lilaCovering) === "yes";
 /** Sabbatical's sage card for each activity: time, name, who runs it; tap for the rest. */
 export function ActivityCard({
   activity: a,
+  callTime,
   vips,
   expandAll,
   tone = "sage",
 }: {
   activity: ActivityRow;
+  /** The team's call time, from the matching Schedule row. */
+  callTime?: string;
   /** Key People on this activity, e.g. "Carolyn Mar". */
   vips?: string;
   expandAll?: boolean;
@@ -463,7 +466,7 @@ export function ActivityCard({
         className="flex w-full items-start gap-3 p-4 text-left"
       >
         <div className="min-w-0 flex-1 space-y-2.5">
-          <TimeColumn event={shortRange(a.start, a.end)} />
+          <TimeColumn call={shortTime(callTime ?? "")} event={shortRange(a.start, a.end)} />
           <div>
             {covering(a) ? <p className="ui-label mb-0.5 text-[11px]">LILA covering</p> : null}
             <h3 className="text-[17px] leading-snug font-semibold text-foreground">{a.activity}</h3>

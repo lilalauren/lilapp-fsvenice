@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ActivityCard, ExpandAll } from "@/components/lilapp/cards";
 import { Quiet } from "@/components/lilapp/ui";
 import { activityVips } from "@/lib/people";
-import { normalizeName, sortActivities } from "@/lib/schedule";
+import { normalizeName, scheduleRowForActivity, sortActivities } from "@/lib/schedule";
 import { formatDayLong } from "@/lib/time";
 import { tripQueryOptions } from "@/lib/trip";
 
@@ -58,6 +58,7 @@ function ActivitiesPage() {
                 <li key={a.id}>
                   <ActivityCard
                     activity={a}
+                    callTime={scheduleRowForActivity(a, data.schedule)?.callTime}
                     vips={activityVips(data.people, a.activity)}
                     expandAll={expandAll}
                   />

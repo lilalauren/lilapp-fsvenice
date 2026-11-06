@@ -67,6 +67,14 @@ export function matchActivity(
   });
 }
 
+/** The Schedule row for an activity (the reverse of matchActivity), e.g. for its call time. */
+export function scheduleRowForActivity(
+  activity: ActivityRow,
+  rows: ScheduleRow[],
+): ScheduleRow | undefined {
+  return sortSchedule(rows).find((r) => matchActivity(r, [activity]) === activity);
+}
+
 /** LILA covering "Yes" first, then "Likely", then everything else; earliest start first. */
 export function sortActivities(activities: ActivityRow[]): ActivityRow[] {
   const rank = (a: ActivityRow) =>

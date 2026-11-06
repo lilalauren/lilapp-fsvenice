@@ -19,6 +19,7 @@ import {
   itemDate,
   matchActivity,
   nowAndNext,
+  scheduleRowForActivity,
   scheduleDays,
   type DayItem,
 } from "@/lib/schedule";
@@ -321,7 +322,12 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
           <h3 className="ui-label mb-2">Your Activities</h3>
           <div className="space-y-3">
             {myActivities.map((a) => (
-              <ActivityCard key={a.id} activity={a} vips={activityVips(data.people, a.activity)} />
+              <ActivityCard
+                key={a.id}
+                activity={a}
+                callTime={scheduleRowForActivity(a, data.schedule)?.callTime}
+                vips={activityVips(data.people, a.activity)}
+              />
             ))}
           </div>
         </section>
