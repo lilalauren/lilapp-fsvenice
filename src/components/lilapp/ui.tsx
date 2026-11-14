@@ -32,9 +32,9 @@ export function Linkify({ text }: { text: string }) {
   );
 }
 
-/** Multi-line Airtable notes as a tidy list (each line its own row). */
-export function NotesList({ notes, className }: { notes: string; className?: string }) {
-  const lines = notes
+/** Airtable long text as clean lines: one per row, bullets stripped. */
+export function noteLines(notes: string): string[] {
+  return notes
     .split(/\r?\n/)
     .map((l) =>
       l
@@ -43,6 +43,11 @@ export function NotesList({ notes, className }: { notes: string; className?: str
         .trim(),
     )
     .filter(Boolean);
+}
+
+/** Multi-line Airtable notes as a tidy list (each line its own row). */
+export function NotesList({ notes, className }: { notes: string; className?: string }) {
+  const lines = noteLines(notes);
   if (lines.length === 0) return null;
   if (lines.length === 1) {
     return (

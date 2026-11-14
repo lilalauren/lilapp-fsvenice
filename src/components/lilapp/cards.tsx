@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode, type Ref } from "react";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, ChevronRight, FileText, Map } from "lucide-react";
+import { Check, ChevronRight, ChevronUp, FileText, Map, X } from "lucide-react";
 
 import type { ActivityRow, ScheduleRow } from "@/lib/airtable.server";
 import { hasDecorCard, normalizeName } from "@/lib/schedule";
@@ -9,7 +9,9 @@ import { cn } from "@/lib/utils";
 import { scheduleBeo, type Beo } from "@/lib/venice-beos";
 import { scheduleImages, type VeniceImage } from "@/lib/venice-images";
 import { PdfViewer } from "./PdfViewer";
-import { Block, Field, ImageViewer, NotesList } from "./ui";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
+import { gotShots, toggleShot } from "@/lib/shots";
+import { Block, Field, ImageViewer, noteLines, NotesList } from "./ui";
 
 /**
  * Sabbatical's times: "Call | 6:15 pm" stacked over "Event | 7–10 pm", at the top
@@ -216,34 +218,34 @@ export function EventCard({
   setup,
   past,
   activity,
-  expandAll,
+  autoOpen,
   cardRef,
 }: {
   row: ScheduleRow;
   setup: boolean;
   past: boolean;
   activity?: ActivityRow;
-  expandAll?: boolean;
+  /** Sabbatical's "Happening Now": open the details by themselves (once per event). */
+  autoOpen?: boolean;
   cardRef?: Ref<HTMLElement>;
 }) {
   const [shown, setShown] = usePastToggle(past);
-  const [open, setOpen] = useDetails(expandAll);
-  const images = scheduleImages(row.eventName);
-  const plans = images.filter(isPlan);
-  const decor = images.filter((i) => !isPlan(i));
-  const callText = shortTime(row.callTime);
-  // Repeat the call time in the details only when it carries a note, e.g. "(team leaves the Danieli)".
-  const callNote = /[a-z]{3,}/i.test(row.callTime.replace(/\b[ap]\.?m\.?\b/gi, ""));
-  // Décor to Shoot lives on the separate Décor card when the event has one.
-  const decorCardShown = hasDecorCard(row);
+  const [open, setOpen] = useState(false);
+  const dismissed = useRef(false);
+  useEffect(() => {
+    if (autoOpen && !dismissed.current) setOpen(true);
+  }, [autoOpen, row.id]);
+  const shots = noteLines(row.photographyRequests);
+  const preview = shots.slice(0, 3);
   const hasDetails = Boolean(
-    row.boatTransfer ||
-    row.departureSpot ||
     row.notes ||
-    row.photographyRequests ||
-    (row.decorToShoot && !decorCardShown) ||
+    shots.length ||
+    row.departureSpot ||
+    row.boatTransfer ||
+    row.decorToShoot ||
     activity?.meetingPoint ||
-    callNote,
+    scheduleImages(row.eventName).length ||
+    scheduleBeo(row.eventName),
   );
 
   if (past && !shown) {
@@ -268,81 +270,188 @@ export function EventCard({
     >
       <button
         type="button"
-        onClick={() => (hasDetails ? setOpen((o) => !o) : past && setShown(false))}
-        aria-expanded={open}
-        className="flex w-full items-start gap-3 p-4 text-left"
+        onClick={() => (hasDetails ? setOpen(true) : past && setShown(false))}
+        aria-haspopup={hasDetails ? "dialog" : undefined}
+        className="block w-full p-4 pb-2 text-left"
       >
-        <div className="min-w-0 flex-1 space-y-2.5">
-          <TimeColumn call={callText} event={shortRange(row.startTime, row.endTime)} />
-          <div>
-            {setup || row.rush ? (
-              <p className="ui-label mb-0.5 text-[11px]">
-                {setup ? "Setup" : null}
-                {setup && row.rush ? " · " : null}
-                {row.rush ? <span className="text-destructive">Rush</span> : null}
-              </p>
-            ) : null}
-            <h3 className="text-[17px] leading-snug font-semibold text-foreground">
-              {row.eventName || "Untitled"}
-            </h3>
-            {row.venue ? (
-              <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">{row.venue}</p>
-            ) : null}
-            <Photographers names={row.photographers} />
-            {row.vipFocus ? (
-              <p className="mt-1 text-[13px] text-muted-foreground">
-                <span className="label-caps mr-1">VIP</span>
-                {row.vipFocus}
-              </p>
-            ) : null}
-          </div>
+        <TimeColumn call={shortTime(row.callTime)} event={shortRange(row.startTime, row.endTime)} />
+        <div className="mt-2.5">
+          {setup ? <p className="ui-label mb-0.5 text-[11px]">Setup</p> : null}
+          <h3 className="text-[17px] leading-snug font-semibold text-foreground">
+            {row.eventName || "Untitled"}
+          </h3>
+          {row.venue ? (
+            <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">{row.venue}</p>
+          ) : null}
+          <Photographers names={row.photographers} />
+          {row.vipFocus ? (
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              <span className="label-caps mr-1">VIP</span>
+              {row.vipFocus}
+            </p>
+          ) : null}
         </div>
+        {/* The first shots, right on the card: no tap needed to see what matters most. */}
+        {preview.length ? (
+          <ul className="mt-3 space-y-1 border-t border-border pt-3">
+            {preview.map((line) => (
+              <li key={line} className="ui-body flex gap-2 text-foreground/85">
+                <span aria-hidden className="mt-[0.6em] size-1 shrink-0 rounded-full bg-subtle" />
+                <span className="min-w-0">{line}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </button>
-      <MediaButtons decor={decor} plans={plans} beo={scheduleBeo(row.eventName)} />
-      {/* Panattoni's centred chevron at the bottom of the card opens the details. */}
       {hasDetails ? (
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-label={open ? "Hide details" : "Show details"}
-          className="flex min-h-9 w-full items-start justify-center pb-2 text-primary/80"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-label={`Open details for ${row.eventName}`}
+          className="flex min-h-10 w-full items-center justify-center gap-1 pb-2 text-[13px] font-semibold text-primary"
         >
-          <ChevronDown
-            aria-hidden
-            className={cn("size-6 transition-transform", open && "rotate-180")}
-            strokeWidth={2}
-          />
+          {shots.length > preview.length ? `${shots.length - preview.length} more · ` : ""}
+          Details
+          <ChevronUp aria-hidden className="size-4" strokeWidth={2.5} />
         </button>
       ) : null}
-      {open ? (
-        <div className="space-y-5 border-t border-border px-4 pt-3 pb-4">
-          {/* 1. Where to be */}
-          {callNote ? <Field label="Call" value={row.callTime} /> : null}
-          {row.departureSpot || row.boatTransfer || activity?.meetingPoint ? (
-            <div className="space-y-0.5">
-              <Field label="Meet at" value={activity?.meetingPoint} />
-              <Field label="Departs from" value={row.departureSpot} />
-              <Field label="Boat" value={row.boatTransfer} />
+      <EventSheet
+        open={open}
+        onClose={() => {
+          dismissed.current = true;
+          setOpen(false);
+        }}
+        row={row}
+        activity={activity}
+      />
+    </article>
+  );
+}
+
+/**
+ * M Financial's details sheet, slid up from the bottom: who/when/where at the top,
+ * then Briefing and the Coverage Assignments to tick off, then Décor, Layout and BEO.
+ */
+function EventSheet({
+  open,
+  onClose,
+  row,
+  activity,
+}: {
+  open: boolean;
+  onClose: () => void;
+  row: ScheduleRow;
+  activity?: ActivityRow;
+}) {
+  const images = scheduleImages(row.eventName);
+  const plans = images.filter(isPlan);
+  const decor = images.filter((i) => !isPlan(i));
+  // Repeat the call time only when it carries a note, e.g. "(team leaves the Danieli)".
+  const callNote = /[a-z]{3,}/i.test(row.callTime.replace(/\b[ap]\.?m\.?\b/gi, ""));
+  return (
+    <Drawer open={open} onOpenChange={(v) => !v && onClose()} shouldScaleBackground={false}>
+      <DrawerContent className="mx-auto flex max-h-[88dvh] w-full max-w-2xl flex-col border-0 bg-background">
+        <header className="shrink-0 border-b border-border px-4 pt-2 pb-4">
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <DrawerTitle className="text-[19px] leading-snug font-semibold text-foreground">
+                {row.eventName}
+              </DrawerTitle>
+              {row.venue ? (
+                <p className="mt-1 text-[15px] leading-snug text-muted-foreground">{row.venue}</p>
+              ) : null}
             </div>
-          ) : null}
-          {/* 2. What to know */}
-          <Block label="Briefing" text={row.notes} />
-          {/* 3. What to photograph */}
-          <Block label="Coverage Assignments" text={row.photographyRequests} />
-          {decorCardShown ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
-          {past ? (
             <button
               type="button"
-              onClick={() => setShown(false)}
-              className="ui-label min-h-9 text-[11px]"
+              onClick={onClose}
+              aria-label="Close details"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-[var(--card-shadow)]"
             >
-              Hide
+              <X className="size-5" />
             </button>
-          ) : null}
+          </div>
+          <div className="mt-3">
+            <TimeColumn
+              call={shortTime(row.callTime)}
+              event={shortRange(row.startTime, row.endTime)}
+            />
+            <Photographers names={row.photographers} />
+          </div>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <div className="space-y-6">
+            {callNote || row.departureSpot || row.boatTransfer || activity?.meetingPoint ? (
+              <section className="space-y-0.5">
+                {callNote ? <Field label="Call" value={row.callTime} /> : null}
+                <Field label="Meet at" value={activity?.meetingPoint} />
+                <Field label="Departs from" value={row.departureSpot} />
+                <Field label="Boat" value={row.boatTransfer} />
+              </section>
+            ) : null}
+            <Block label="Briefing" text={row.notes} />
+            <ShotList eventId={row.id} text={row.photographyRequests} />
+            {hasDecorCard(row) ? null : <Block label="Décor to Shoot" text={row.decorToShoot} />}
+            <MediaButtons decor={decor} plans={plans} beo={scheduleBeo(row.eventName)} />
+          </div>
         </div>
-      ) : null}
-    </article>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+/** Coverage Assignments with a tick for each shot ("Got it"), remembered on this phone. */
+function ShotList({ eventId, text }: { eventId: string; text: string }) {
+  const lines = noteLines(text);
+  const [got, setGot] = useState<string[]>([]);
+  useEffect(() => setGot(gotShots(eventId)), [eventId]);
+  if (lines.length === 0) return null;
+  const done = lines.filter((l) => got.includes(l)).length;
+  return (
+    <section>
+      <h4 className="label-caps mb-1.5 flex justify-between font-bold text-foreground">
+        <span>Coverage Assignments</span>
+        <span className="font-semibold text-subtle">
+          {done} of {lines.length}
+        </span>
+      </h4>
+      <ul className="divide-y divide-border">
+        {lines.map((line) => {
+          const checked = got.includes(line);
+          return (
+            <li key={line}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={checked}
+                onClick={() => setGot(toggleShot(eventId, line))}
+                className="flex min-h-11 w-full items-start gap-3 py-2 text-left"
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2",
+                    checked
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-sage-line",
+                  )}
+                >
+                  {checked ? <Check className="size-3" strokeWidth={3} /> : null}
+                </span>
+                <span
+                  className={cn(
+                    "ui-body min-w-0",
+                    checked ? "text-muted-foreground line-through" : "text-foreground",
+                  )}
+                >
+                  {line}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

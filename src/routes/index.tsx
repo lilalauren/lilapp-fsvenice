@@ -10,7 +10,6 @@ import {
   isAmenityRow,
   DecorCard,
   EventCard,
-  ExpandAll,
 } from "@/components/lilapp/cards";
 import { Quiet, SelectBox } from "@/components/lilapp/ui";
 import {
@@ -33,7 +32,7 @@ import type { ActivityRow, TripData } from "@/lib/airtable.server";
 // the code: set this to true to bring the link back for future events.
 const SHOW_PRINT = false;
 
-type ScheduleSearch = { day?: string; who?: string; view?: "mine" };
+type ScheduleSearch = { day?: string; who?: string; view?: "mine" | "full" };
 
 const pick = (search: Record<string, unknown>, key: string) =>
   typeof search[key] === "string" && search[key] ? (search[key] as string) : undefined;
@@ -42,7 +41,7 @@ export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): ScheduleSearch => ({
     day: pick(search, "day"),
     who: pick(search, "who"),
-    view: search.view === "mine" ? "mine" : undefined,
+    view: search.view === "mine" || search.view === "full" ? search.view : undefined,
   }),
   head: () => ({ meta: [{ title: "Schedule — LILApp Venice" }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(tripQueryOptions),
@@ -64,17 +63,20 @@ function SchedulePage() {
   const who = search.who ?? "";
   const setSearch = (next: ScheduleSearch) =>
     navigate({ search: (prev) => ({ ...prev, ...next }), replace: true });
+  // Like Sabbatical: once you've picked your name, the app opens on your day.
+  const [name] = useDisplayName();
+  const view = search.view ?? (name ? "mine" : "full");
 
   return (
     <>
       <div className="mb-3 grid grid-cols-2 rounded-[13px] bg-secondary p-1 text-sm">
         {(["full", "mine"] as const).map((v) => {
-          const active = (search.view ?? "full") === v;
+          const active = view === v;
           return (
             <button
               key={v}
               type="button"
-              onClick={() => setSearch({ view: v === "mine" ? "mine" : undefined })}
+              onClick={() => setSearch({ view: v })}
               aria-pressed={active}
               className={
                 active
@@ -87,7 +89,7 @@ function SchedulePage() {
           );
         })}
       </div>
-      {search.view === "mine" ? (
+      {view === "mine" ? (
         <MySchedule data={data} days={days} />
       ) : (
         <FullSchedule
@@ -134,7 +136,6 @@ function FullSchedule({
     const index = items.findIndex((i) => !isItemPast(i));
     return index > 0 ? items[index]!.key : null;
   }, [items]);
-  const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
   const currentRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!currentKey) return;
@@ -178,7 +179,6 @@ function FullSchedule({
         ) : (
           <span />
         )}
-        <ExpandAll allOpen={Boolean(expandAll)} onClick={() => setExpandAll(!expandAll)} />
       </div>
       <p className="text-sm text-muted-foreground">{TIME_LABEL}</p>
 
@@ -196,7 +196,6 @@ function FullSchedule({
                   key={item.key}
                   item={item}
                   activities={data.activities}
-                  expandAll={expandAll}
                   cardRef={item.key === currentKey ? currentRef : undefined}
                 />
               ))}
@@ -216,12 +215,10 @@ function rowsHaveActivityDay(data: TripData, day: string) {
 function ScheduleItem({
   item,
   activities,
-  expandAll,
   cardRef,
 }: {
   item: DayItem;
   activities: ActivityRow[];
-  expandAll?: boolean;
   cardRef?: React.Ref<HTMLElement>;
 }) {
   const past = isItemPast(item);
@@ -236,7 +233,6 @@ function ScheduleItem({
       setup={item.setup}
       past={past}
       activity={matchActivity(item.row, activities)}
-      expandAll={expandAll}
       cardRef={cardRef}
     />
   );
@@ -303,6 +299,7 @@ function MySchedule({ data, days }: { data: TripData; days: string[] }) {
             setup={false}
             past={false}
             activity={matchActivity(happening, data.activities)}
+            autoOpen
           />
         </section>
       ) : null}
