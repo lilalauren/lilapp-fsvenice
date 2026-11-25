@@ -53,3 +53,8 @@ bun run build
 ```
 
 Deploys on Netlify from GitHub (`netlify.toml`).
+
+## Using this as a template
+
+This build is the **Four Seasons LILApp template v1** (tag `four-seasons-template-v1`).
+See [TEMPLATE.md](TEMPLATE.md) for how to start a new Four Seasons job from it.
